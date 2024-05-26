@@ -26,10 +26,18 @@ set( Cmake_Project_Binary_File_Name "$<TARGET_FILE:tgt>" )
 set( cmake_definitions_out "${CMAKE_CURRENT_LIST_DIR}/${cmake_auto_sub_dir_name}/macro/cmake_to_c_cpp_header_env.h" )
 set( cmake_definitions_org "${cmake_definitions_tmp}/cmake_in/cmake_to_c_cpp_header_env.h.in" )
 
+string( REPLACE "." "_" project_name_include_dir ${PROJECT_NAME} )
+set( ${project_name_include_dir}_include_dir ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/ PARENT_SCOPE )
+
+STRING( SUBSTRING "${PROJECT_NAME}" 0 1 exportFileStartName )
+STRING( SUBSTRING "${PROJECT_NAME}" 1 -1 exportFileName )
+STRING( TOUPPER ${exportFileStartName} exportFileStartName )
+
+include_directories( ${DataCheck_include_dir} )
 set( ${project_name_include_dir}_include_dir ${CMAKE_CURRENT_LIST_DIR} PARENT_SCOPE )
 
 # # 合并源码
-list( APPEND ${SRC_LIST} ${SRC_UI} ${QM_FILES} ${SRC_DATA} ${cmake_definitions_out} )
+list( APPEND ${SRC_LIST} ${SRC_UI} ${QM_FILES} ${SRC_DATA} ${cmake_definitions_out} ${exportFileName})
 add_library( ${PROJECT_NAME} SHARED
 	${SRC_LIST}
 )
@@ -41,6 +49,7 @@ target_link_libraries( ${PROJECT_NAME}
 	Qt${QT_VERSION_MAJOR}::Core
 	Qt${QT_VERSION_MAJOR}::Network
 	Qt${QT_VERSION_MAJOR}::Core5Compat
+	DataCheck
 )
 
 
@@ -56,15 +65,7 @@ else()
 endif()
 
 configure_file( "${cmake_definitions_org}" "${cmake_definitions_out}" )
-
-string( REPLACE "." "_" project_name_include_dir ${PROJECT_NAME} )
-set( ${project_name_include_dir}_include_dir ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_CURRENT_LIST_DIR}/ PARENT_SCOPE )
-
-STRING( SUBSTRING "${PROJECT_NAME}" 0 1 exportFileStartName )
-STRING( SUBSTRING "${PROJECT_NAME}" 1 -1 exportFileName )
-STRING( TOUPPER ${exportFileStartName} exportFileStartName )
 SET( exportFileName ${CMAKE_CURRENT_SOURCE_DIR}/${cmake_auto_sub_dir_name}/export/${exportFileStartName}${exportFileName}_export.h )
 GENERATE_EXPORT_HEADER( ${PROJECT_NAME}
 	EXPORT_FILE_NAME ${exportFileName}
 )
-TARGET_INCLUDE_DIRECTORIES( ${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR} )

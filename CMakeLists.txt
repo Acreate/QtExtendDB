@@ -56,6 +56,7 @@ set( cmake_definitions_in ${cmake_definitions_tmp}/cmake_in/cmake_to_c_cpp_heade
 
 add_compile_options( /utf-8 )
 
+get_path_cmake_dir_path( out_path_list ${CMAKE_CURRENT_SOURCE_DIR}/srcs/git/DataCheck/srcs/DataCheck "CMakeLists.txt" )
 get_path_cmake_dir_path( out_path_list ${CMAKE_CURRENT_SOURCE_DIR}/srcs/QtExtendDB/ "CMakeLists.txt" )
 
 get_path_cmake_dir_path( out_path_list ${CMAKE_CURRENT_SOURCE_DIR}/srcs/testQtExtendDB/ "CMakeLists.txt" )

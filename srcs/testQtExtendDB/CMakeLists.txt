@@ -16,6 +16,7 @@ file( GLOB_RECURSE SRC_LIST
 	"*.hpp"
 )
 
+include_directories( ${DataCheck_include_dir} )
 include_directories( ${QtExtendDB_include_dir} )
 
 set( cmake_definitions_out "${CMAKE_CURRENT_LIST_DIR}/src/${cmake_auto_sub_dir_name}/macro/cmake_to_c_cpp_header_env.h" )
