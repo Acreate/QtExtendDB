@@ -58,7 +58,7 @@ bool cylDB::SQliteDepository::hasTab( const QString &tab_name ) const {
 	return database->tables( ).contains( tab_name );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info, const QString &key, const QString &key_type ) const {
-	if( tab_info.isEmpty( ) || tab_name.isEmpty( ) )
+	if( !database || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
 		return false;
 	if( key.isEmpty( ) )
 		return createTab( tab_name, tab_info );
@@ -91,7 +91,7 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	return query.exec( createTabCmd );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
-	if( tab_info.isEmpty( ) || tab_name.isEmpty( ) )
+	if( !database || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
 		return false;
 
 	QString createTabCmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
