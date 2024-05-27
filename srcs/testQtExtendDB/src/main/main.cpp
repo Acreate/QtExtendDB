@@ -23,17 +23,6 @@ int main( int argc, char *argv[ ] ) {
 	} else {
 		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
 	}
-	auto depositorys = dbInterface->getDepositorys( );
-	if( depositorys.size( ) != 0 ) {
-		qDebug( ) << u8"找到数据库:";
-		for( auto &depository : depositorys ) {
-			QString dbName = depository->getDBName( );
-			if( dbName.isEmpty( ) ) {
-				qDebug( ) << u8"\t数据库不存在";
-			} else
-				qDebug( ) << '\t' << dbName.toStdString( ).c_str( );
-		}
-	}
 	qDebug( ) << u8"===========================================";
 	{
 		QString path( u8"%1%2%3" );
@@ -46,30 +35,21 @@ int main( int argc, char *argv[ ] ) {
 			if( !remove )
 				qDebug( ) << u8" -> 删除已经存在的库\t-失败";
 		}
-
-		qDebug( ) << u8" -> 尝试创建一个有利的数据库\t2";
+		if( sigDb.exists( ) )
+			qDebug( ) << u8" -> 尝试打开 " << path;
+		else
+			qDebug( ) << u8" -> 尝试创建一个有利的数据库\t2";
 		auto depository = dbInterface->openAbsoluteFilePathDepository( path );
 		if( depository ) {
 			if( depository->isOpen( ) ) {
 				qDebug( ) << '\t' << depository->getDBName( ).toStdString( ).c_str( ) << u8" 尝试成功";
 				QString newTabName = u8"url";
 				bool tab = depository->createTab( newTabName
-					, { { "one", "TEXT" }, { "two", "TEXT" } }
-					, "key"
-					, "INTEGER" );
+					, { { "one", "TEXT" }, { "two", "TEXT" } } );
 				qDebug( ) << u8"创建 (" << newTabName << ") : " << tab;
 				if( tab ) {
-					qDebug( ) << u8"检查 (" << newTabName << ") : " << depository->hasTab( newTabName );
-					auto resultInfoShared = depository->getTabInfo( newTabName );
-					if( resultInfoShared ) {
-						resultInfoShared->resetColIndex( );
-						do {
-							auto currentRows = resultInfoShared->getCurrentRows( );
-							for( auto &var : *currentRows )
-								qDebug( ) << u8"=>\t" << *var;
-							qDebug( ) << u8"-------------";
-						} while( resultInfoShared->nextCol( ) );
-					}
+					auto addItem = depository->addItem( newTabName, { "one", "two" }, { R"("1234")", R"("444")" } );
+					qDebug( ) << u8"增加项 : " << addItem;
 				} else
 					qDebug( ) << u8"创建 (" << newTabName << ") : 失败";
 			} else

@@ -44,12 +44,27 @@ namespace cylDB {
 		/// <returns>返回所有列的信息</returns>
 		virtual IResultInfo_Shared getTabInfo( const QString &tab_name ) const = 0;
 		/// <summary>
+		/// 获取所有表名
+		/// </summary>
+		/// <returns>结果</returns>
+		virtual IResultInfo_Shared getAllTab() const = 0;
+		/// <summary>
 		/// 在表中创建一项
 		/// </summary>
 		/// <param name="tab_name">表名称</param>
 		/// <param name="item_name">项名</param>
+		/// <param name="item_value">值</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool addItem( const QString &tab_name, const QString &item_name ) const = 0;
+		virtual bool addItem( const QString &tab_name, const QStringList& item_name, const QStringList& item_value) const = 0;
+		/// <summary>
+		/// 在表中创建一项
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="item_name">项名</param>
+		/// <param name="item_value">值</param>
+		/// <param name="where">条件</param>
+		/// <returns>成功返回 true</returns>
+		virtual bool addItem( const QString &tab_name, const QStringList& item_name, const QStringList& item_value, const QString& where) const = 0;
 		/// <summary>
 		/// 删除表中的一项
 		/// </summary>
@@ -58,26 +73,12 @@ namespace cylDB {
 		/// <returns>成功返回 true</returns>
 		virtual bool removeItem( const QString &tab_name, const QString &item_name ) const = 0;
 		/// <summary>
-		/// 在表当中插入数据
-		/// </summary>
-		/// <param name="tab_name">表名称</param>
-		/// <param name="variants">数据列表</param>
-		/// <returns>成功返回 true</returns>
-		virtual bool appendData( const QString &tab_name, QVector< QVariant > variants ) const = 0;
-		/// <summary>
 		/// 在表当中更新数据
 		/// </summary>
 		/// <param name="tab_name">表名称</param>
 		/// <param name="var_map_s">数据列表</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool updateData( const QString &tab_name, QMap< QVariant, QVariant > var_map_s ) const = 0;
-		/// <summary>
-		/// 删除表中信息，满足条件为完整匹配 var_map_s 参数
-		/// </summary>
-		/// <param name="tab_name">表名称</param>
-		/// <param name="var_map_s">数据列表</param>
-		/// <returns>成功返回 true</returns>
-		virtual bool removeData( const QString &tab_name, QMap< QVariant, QVariant > var_map_s ) const = 0;
+		virtual bool updateItem( const QString &tab_name, QMap< QVariant, QVariant > var_map_s ) const = 0;
 		/// <summary>
 		/// 设置用户信息
 		/// </summary>
@@ -109,11 +110,6 @@ namespace cylDB {
 		/// </summary>
 		/// <returns>最后的错误</returns>
 		virtual QSqlError getLastError( ) const = 0;
-		/// <summary>
-		/// 提交
-		/// </summary>
-		/// <returns>成功返回 true</returns>
-		virtual bool commit( ) const = 0;
 		/// <summary>
 		/// 是否打开错误
 		/// </summary>

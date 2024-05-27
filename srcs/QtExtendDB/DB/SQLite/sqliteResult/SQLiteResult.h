@@ -15,9 +15,8 @@ namespace cylDB {
 		size_t currentTabIndex;
 		size_t readTabIndex;
 		size_t currentCount;
-	private:
-		SQLiteResult( );
 	public:
+		SQLiteResult( );
 		~SQLiteResult( ) override;
 		size_t getCount( ) const override {
 			return currentCount;
