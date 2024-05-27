@@ -22,6 +22,11 @@ namespace cylDB {
 		/// <returns>成功返回 true</returns>
 		virtual bool link( const QString &link ) = 0;
 		/// <summary>
+		/// 返回链接
+		/// </summary>
+		/// <returns>链接</returns>
+		virtual QString getLink( ) = 0;
+		/// <summary>
 		/// 是否已经链接
 		/// </summary>
 		/// <returns>成功返回 true</returns>
@@ -38,6 +43,28 @@ namespace cylDB {
 		/// <param name="db_name">数据库名称</param>
 		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
 		virtual Depository_Shared openDepository( const QString &db_name ) = 0;
+		/// <summary>
+		/// 不使用本地的 link 路径实现数据库打开
+		/// </summary>
+		/// <param name="absoluteFilePath">数据库名称</param>
+		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
+		virtual Depository_Shared openAbsoluteFilePathDepository( const QString &absoluteFilePath ) = 0;
+		/// <summary>
+		/// 打开数据库
+		/// </summary>
+		/// <param name="db_name">数据库名称</param>
+		/// <param name="name">打开数据库时用的用户名</param>
+		/// <param name="password">打开数据库时用的用户密码</param>
+		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
+		virtual Depository_Shared openDepository( const QString &db_name, const QString &name, const QString &password ) const = 0;
+		/// <summary>
+		/// 不使用本地的 link 路径实现数据库打开
+		/// </summary>
+		/// <param name="absoluteFilePath">数据库名称</param>
+		/// <param name="name">打开数据库时用的用户名</param>
+		/// <param name="password">打开数据库时用的用户密码</param>
+		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
+		virtual Depository_Shared openAbsoluteFilePathDepository( const QString &absoluteFilePath, const QString &name, const QString &password ) const = 0;
 		/// <summary>
 		/// 获取链接当中的所有数据库
 		/// </summary>

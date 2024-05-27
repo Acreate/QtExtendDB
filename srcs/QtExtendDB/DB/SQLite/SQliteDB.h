@@ -1,6 +1,8 @@
 ﻿#ifndef SQLITE_H_H_HEAD__FILE__
 #define SQLITE_H_H_HEAD__FILE__
 #pragma once
+#include <QDir>
+
 #include "../../nameSpace/cylDB.h"
 #include "../dbInterface/I_DB.h"
 namespace cylDB {
@@ -20,6 +22,12 @@ namespace cylDB {
 		/// <param name="link">链接</param>
 		/// <returns>成功返回 true</returns>
 		bool link( const QString &link ) override;
+
+		/// <summary>
+		/// 返回链接
+		/// </summary>
+		/// <returns>链接</returns>
+		QString getLink( ) override;
 		/// <summary>
 		/// 是否已经链接
 		/// </summary>
@@ -36,7 +44,35 @@ namespace cylDB {
 		/// </summary>
 		/// <param name="db_name">数据库名称</param>
 		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
-		Depository_Shared openDepository( const QString &db_name ) override;
+		Depository_Shared openDepository( const QString &db_name ) override {
+			auto dbPath = linkPath + QDir::separator( ) + db_name;
+			return openAbsoluteFilePathDepository( dbPath );
+		}
+		/// <summary>
+		/// 不使用本地的 link 路径实现数据库打开
+		/// </summary>
+		/// <param name="absoluteFilePath">数据库名称</param>
+		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
+		Depository_Shared openAbsoluteFilePathDepository( const QString &absoluteFilePath ) override;
+		/// <summary>
+		/// 打开数据库
+		/// </summary>
+		/// <param name="db_name">数据库名称</param>
+		/// <param name="name">打开数据库时用的用户名</param>
+		/// <param name="password">打开数据库时用的用户密码</param>
+		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
+		Depository_Shared openDepository( const QString &db_name, const QString &name, const QString &password ) const override {
+			auto dbPath = linkPath + QDir::separator( ) + db_name;
+			return openAbsoluteFilePathDepository( dbPath, name, password );
+		}
+		/// <summary>
+		/// 不使用本地的 link 路径实现数据库打开
+		/// </summary>
+		/// <param name="absoluteFilePath">数据库名称</param>
+		/// <param name="name">打开数据库时用的用户名</param>
+		/// <param name="password">打开数据库时用的用户密码</param>
+		/// <returns>返回数据库对象指针，失败返回 nullptr</returns>
+		Depository_Shared openAbsoluteFilePathDepository( const QString &absoluteFilePath, const QString &name, const QString &password ) const override;
 		/// <summary>
 		/// 获取链接当中的所有数据库
 		/// </summary>

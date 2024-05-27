@@ -19,6 +19,9 @@ bool SQliteDB::link( const QString &link ) {
 	}
 	return false;
 }
+QString SQliteDB::getLink( ) {
+	return linkPath;
+}
 bool SQliteDB::isLink( ) {
 	QFileInfo qFileInfo( linkPath );
 	if( qFileInfo.isDir( ) && qFileInfo.exists( ) )
@@ -34,12 +37,30 @@ bool SQliteDB::hasDepository( const QString &db_name ) {
 	}
 	return false;
 }
-Depository_Shared SQliteDB::openDepository( const QString &db_name ) {
-	auto dbPath = linkPath + QDir::separator( ) + db_name;
-	if( QFile::exists( dbPath ) ) // 存在，则直接打开
-		return std::make_shared< SQliteDepository >( dbPath );
+
+Depository_Shared SQliteDB::openAbsoluteFilePathDepository( const QString &absoluteFilePath ) {
+	if( QFile::exists( absoluteFilePath ) ) {
+		auto qliteDepository = std::make_shared< SQliteDepository >( absoluteFilePath );
+		// 存在，则直接打开
+		if( qliteDepository->isOpen( ) && qliteDepository->open( ) )
+			return qliteDepository;
+	}
 	// 不存在，则创建
-	return SQliteDepository::createDepository( dbPath );
+	return SQliteDepository::createDepository( absoluteFilePath );
+}
+
+Depository_Shared SQliteDB::openAbsoluteFilePathDepository( const QString &absoluteFilePath, const QString &name, const QString &password ) const {
+	if( QFile::exists( absoluteFilePath ) ) {
+		auto qliteDepository = std::make_shared< SQliteDepository >( absoluteFilePath );
+		// 存在，则直接打开
+		if( qliteDepository->isOpen( ) || qliteDepository->open( ) || qliteDepository->open( name, password ) ) {
+			qliteDepository->setUserInfo( name, password );
+			return qliteDepository;
+		}
+	}
+	// 不存在，则创建
+	return SQliteDepository::createDepository( absoluteFilePath, name, password );
+
 }
 QVector< Depository_Shared > SQliteDB::getDepositorys( ) {
 	QVector< Depository_Shared > result;
