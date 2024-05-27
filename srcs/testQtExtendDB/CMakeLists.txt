@@ -55,6 +55,7 @@ call_qt_deploy( ${PROJECT_NAME}
 	Qt${QT_VERSION_MAJOR}::Network
 	Qt${QT_VERSION_MAJOR}::OpenGLWidgets
 	Qt${QT_VERSION_MAJOR}::Core5Compat
+	Qt${QT_VERSION_MAJOR}::Sql
 	QtExtendDB
 )
 

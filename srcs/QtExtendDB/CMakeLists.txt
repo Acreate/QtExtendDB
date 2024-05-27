@@ -42,18 +42,16 @@ add_library( ${PROJECT_NAME} SHARED
 	${SRC_LIST}
 )
 
-target_link_libraries( ${PROJECT_NAME}
+call_qt_deploy( ${PROJECT_NAME}
 	PRIVATE
 	Qt${QT_VERSION_MAJOR}::Widgets
 	Qt${QT_VERSION_MAJOR}::Gui
 	Qt${QT_VERSION_MAJOR}::Core
 	Qt${QT_VERSION_MAJOR}::Network
 	Qt${QT_VERSION_MAJOR}::Core5Compat
+	Qt${QT_VERSION_MAJOR}::Sql
 	DataCheck
 )
-
-
-
 
 get_target_property( project_type_property ${PROJECT_NAME} TYPE )
 

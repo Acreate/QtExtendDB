@@ -14,6 +14,14 @@ namespace cylDB {
 	/// </summary>
 	class QTEXTENDDB_EXPORT I_DB;
 	/// <summary>
+	/// sqlite 链接类
+	/// </summary>
+	class QTEXTENDDB_EXPORT SQliteDB;
+	/// <summary>
+	/// sqlite 数据库对象
+	/// </summary>
+	class QTEXTENDDB_EXPORT SQliteDepository;
+	/// <summary>
 	/// 数据库类
 	/// </summary>
 	class QTEXTENDDB_EXPORT I_Depository;
@@ -33,6 +41,10 @@ namespace cylDB {
 	/// 数据库接口共享指针
 	/// </summary>
 	using DB_Shared = std::shared_ptr< I_DB >;
+	/// <summary>
+	/// 数据库对象共享指针
+	/// </summary>
+	using Depository_Shared = std::shared_ptr< I_Depository >;
 	/// <summary>
 	/// 数据库接口基础指针
 	/// </summary>
