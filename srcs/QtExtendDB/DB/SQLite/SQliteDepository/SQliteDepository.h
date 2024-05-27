@@ -4,11 +4,10 @@
 
 #include "../../../nameSpace/cylDB.h"
 #include "../../dbInterface/I_DB.h"
-#include "../../dbInterface/depositoryInterface/I_Depository.h"
+#include "../../dbInterface/i_depositoryInterface/I_Depository.h"
 class QSqlDatabase;
 namespace cylDB {
 	class QTEXTENDDB_EXPORT SQliteDepository : public I_Depository {
-	public: //- 友元
 	private:
 		std::shared_ptr< QSqlDatabase > database; // 数据库链接对象
 		QString linkPath; // 链接路径
@@ -53,7 +52,7 @@ namespace cylDB {
 		/// </summary>
 		/// <param name="tab_name">表明</param>
 		/// <returns>返回所有列的信息</returns>
-		QMap< QVariant, QVariant > getTabInfo( const QString &tab_name ) const override;
+		IResultInfo_Shared getTabInfo( const QString &tab_name ) const override;
 		/// <summary>
 		/// 在表中创建一项
 		/// </summary>

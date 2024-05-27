@@ -1,6 +1,7 @@
 ﻿#include <QApplication>
 #include <DB/DBTools.h>
-#include <DB/dbInterface/depositoryInterface/I_Depository.h>
+#include <DB/dbInterface/i_depositoryInterface/I_Depository.h>
+#include <DB/dbInterface/i_resultInfo/I_ResultInfo.h>
 #include <DB/dbInterface/I_DB.h>
 #include <qdatetime.h>
 #include <QDir>
@@ -16,14 +17,11 @@ int main( int argc, char *argv[ ] ) {
 		qDebug( ) << u8"无法链接到目标";
 		return 0;
 	}
-	{
-		qDebug( ) << u8" -> 尝试创建一个有利的数据库\t1";
-		QString dbName = QDateTime::currentDateTime( ).toString( u8"1 - yyyy_MM_dd hh-mm-ss" ).append( ".db" );
-		auto depository = dbInterface->openDepository( dbName );
-		if( depository && depository->isOpen( ) ) {
-			qDebug( ) << '\t' << depository->getDBName( ) << u8" 尝试成功";
-		} else
-			qDebug( ) << '\t' << dbName << u8" 尝试失败";
+	auto depositoryShared = dbInterface->openDepository( sqlitePath );
+	if( depositoryShared ) {
+		qDebug( ) << u8"打开 : " << depositoryShared->getDBName( ) << u8" 成功";
+	} else {
+		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
 	}
 	auto depositorys = dbInterface->getDepositorys( );
 	if( depositorys.size( ) != 0 ) {
@@ -44,7 +42,9 @@ int main( int argc, char *argv[ ] ) {
 		path = sigDb.absoluteFilePath( );
 		if( sigDb.exists( ) ) {
 			qDebug( ) << u8" -> 删除已经存在的库\t-" << path;
-			QFile::remove( path );
+			bool remove = QFile::remove( path );
+			if( !remove )
+				qDebug( ) << u8" -> 删除已经存在的库\t-失败";
 		}
 
 		qDebug( ) << u8" -> 尝试创建一个有利的数据库\t2";
@@ -53,12 +53,24 @@ int main( int argc, char *argv[ ] ) {
 			if( depository->isOpen( ) ) {
 				qDebug( ) << '\t' << depository->getDBName( ).toStdString( ).c_str( ) << u8" 尝试成功";
 				QString newTabName = u8"url";
-				bool tab = depository->createTab( newTabName, { { "one"
-					, "TEXT" } } );
+				bool tab = depository->createTab( newTabName
+					, { { "one", "TEXT" }, { "two", "TEXT" } }
+					, "key"
+					, "INTEGER" );
 				qDebug( ) << u8"创建 (" << newTabName << ") : " << tab;
-				if( tab )
+				if( tab ) {
 					qDebug( ) << u8"检查 (" << newTabName << ") : " << depository->hasTab( newTabName );
-				else
+					auto resultInfoShared = depository->getTabInfo( newTabName );
+					if( resultInfoShared ) {
+						resultInfoShared->resetColIndex( );
+						do {
+							auto currentRows = resultInfoShared->getCurrentRows( );
+							for( auto &var : *currentRows )
+								qDebug( ) << u8"=>\t" << *var;
+							qDebug( ) << u8"-------------";
+						} while( resultInfoShared->nextCol( ) );
+					}
+				} else
 					qDebug( ) << u8"创建 (" << newTabName << ") : 失败";
 			} else
 				qDebug( ) << u8"数据库 (" << path << ") 错误 : " << depository->getLastError( );

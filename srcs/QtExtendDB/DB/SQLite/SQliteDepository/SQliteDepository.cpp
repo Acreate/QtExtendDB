@@ -1,24 +1,30 @@
 ﻿#include "SQliteDepository.h"
-
+#include "../sqliteResult/SQLiteResult.h"
 #include <qfileinfo.h>
 #include <QSqlDatabase>
 #include <QSqlError>
+#include <QSqlResult>
 #include <QSqlQuery>
 #include <QMap>
+
+using namespace cylDB;
+
 inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName = "qt_sql_default_connection" ) {
 	std::shared_ptr< QSqlDatabase > result;
 	if( QSqlDatabase::contains( connectionName ) )
-		result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) ), []( QSqlDatabase *p ) {
-			if( p->isOpen( ) )
-				p->close( );
-			delete p;
-		} );
+		result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
+			, []( QSqlDatabase *p ) {
+				if( p->isOpen( ) )
+					p->close( );
+				delete p;
+			} );
 	else
-		result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) ), []( QSqlDatabase *p ) {
-			if( p->isOpen( ) )
-				p->close( );
-			delete p;
-		} );
+		result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
+			, []( QSqlDatabase *p ) {
+				if( p->isOpen( ) )
+					p->close( );
+				delete p;
+			} );
 	return result;
 }
 cylDB::SQliteDepository::SQliteDepository( const QString &link_path, const QString &user, const QString &password ) {
@@ -67,27 +73,25 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	createTabCmd = createTabCmd.arg( tab_name );
 	auto iterator = tab_info.begin( );
 	auto end = tab_info.end( );
-	QStringList strList;
-	strList.append( createTabCmd );
 
-	createTabCmd = "`%1` %2 PRIMARY KEY AUTOINCREMENT, ";
-	strList.append( createTabCmd.arg( key ).arg( key_type ) );
-
+	createTabCmd.append( '`' );
+	createTabCmd.append( key );
+	createTabCmd.append( '`' );
+	createTabCmd.append( key_type );
+	createTabCmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
 	do {
-
-		strList.append( " `" );
-		strList.append( iterator.key( ) );
-		strList.append( "` " );
-		strList.append( iterator.value( ).toString( ) );
+		createTabCmd.append( " `" );
+		createTabCmd.append( iterator.key( ) );
+		createTabCmd.append( "` " );
+		createTabCmd.append( iterator.value( ).toString( ) );
 		++iterator;
 		if( iterator == end ) {
-			strList.append( u8" ); " );
+			createTabCmd.append( u8" ); " );
 			break;
 		}
-		strList.append( ", " );
+		createTabCmd.append( ", " );
 	} while( true );
 	QSqlQuery query( *database );
-	createTabCmd = strList.join( ' ' );
 	return query.exec( createTabCmd );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
@@ -98,28 +102,47 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	createTabCmd = createTabCmd.arg( tab_name );
 	auto iterator = tab_info.begin( );
 	auto end = tab_info.end( );
-	QStringList strList;
-	strList.append( createTabCmd );
 	do {
 
-		strList.append( " `" );
-		strList.append( iterator.key( ) );
-		strList.append( "` " );
-		strList.append( iterator.value( ).toString( ) );
+		createTabCmd.append( " `" );
+		createTabCmd.append( iterator.key( ) );
+		createTabCmd.append( "` " );
+		createTabCmd.append( iterator.value( ).toString( ) );
 
 		++iterator;
 		if( iterator == end ) {
-			strList.append( u8" ); " );
+			createTabCmd.append( u8" ); " );
 			break;
 		}
-		strList.append( ", " );
+		createTabCmd.append( ", " );
 	} while( true );
 	QSqlQuery query( *database );
-	createTabCmd = strList.join( ' ' );
 	return query.exec( createTabCmd );
 }
-QMap< QVariant, QVariant > cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
-	return QMap< QVariant, QVariant >( );
+IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
+	if( database ) {
+		QString cmd = R"( PRAGMA table_info( `%1` ); )";
+		cmd = cmd.arg( tab_name );
+
+		QSqlQuery query( *database );
+
+		bool exec = query.exec( cmd );
+		if( exec ) {
+
+			SQLiteResult *sqLiteResult = new SQLiteResult;
+			while( query.next( ) ) {
+				for( int index = 0; true; ++index ) {
+					auto value = query.value( index );
+					if( !value.isValid( ) )
+						break;
+					sqLiteResult->appendRwo( value );
+				}
+				sqLiteResult->newCol( );
+			}
+			return std::shared_ptr< I_ResultInfo >( sqLiteResult );
+		}
+	}
+	return nullptr;
 }
 bool cylDB::SQliteDepository::addItem( const QString &tab_name, const QString &item_name ) const {
 	return false;

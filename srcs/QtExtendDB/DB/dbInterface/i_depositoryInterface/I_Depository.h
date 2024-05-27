@@ -42,7 +42,7 @@ namespace cylDB {
 		/// </summary>
 		/// <param name="tab_name">表明</param>
 		/// <returns>返回所有列的信息</returns>
-		virtual QMap< QVariant, QVariant > getTabInfo( const QString &tab_name ) const = 0;
+		virtual IResultInfo_Shared getTabInfo( const QString &tab_name ) const = 0;
 		/// <summary>
 		/// 在表中创建一项
 		/// </summary>
