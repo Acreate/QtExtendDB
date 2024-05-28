@@ -70,6 +70,11 @@ namespace cylDB {
 		/// </summary>
 		/// <returns>数据库列表</returns>
 		virtual QVector< Depository_Shared > getDepositorys( ) = 0;
+		/// <summary>
+		/// 返回支持类型
+		/// </summary>
+		/// <returns>支持类型映射，使用 typeid( type ) 作为关键字</returns>
+		virtual QVariantMap getSupportType( ) const = 0;
 	};
 }
 
