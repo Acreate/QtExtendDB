@@ -4,6 +4,7 @@
 
 #include "../../../nameSpace/cylDB.h"
 #include "../../dbInterface/i_tabInfo/I_TabInfo.h"
+#include <qdatetime.h>
 namespace cylDB {
 	class QTEXTENDDB_EXPORT SQLiteTabInfo : public I_TabInfo {
 		using Release_Call = std::function< void( QSqlDatabase **database_ptr ) >;
@@ -87,6 +88,37 @@ namespace cylDB {
 			for( auto &var : titleVector )
 				result.emplace_back( var.index->toInt( ) );
 			return result;
+		}
+		/// <summary>
+		/// 返回支持类型
+		/// </summary>
+		/// <returns>支持类型映射，使用 typeid( type ) 作为关键字</returns>
+		QVariantMap getSupportType( ) const override {
+			return { { typeid( int8_t ).name( ), "INTEGER" }
+				, { typeid( int16_t ).name( ), "INTEGER" }
+				, { typeid( int32_t ).name( ), "INTEGER" }
+				, { typeid( uint8_t ).name( ), "INTEGER" }
+				, { typeid( uint16_t ).name( ), "INTEGER" }
+				, { typeid( uint32_t ).name( ), "INTEGER" }
+				, { typeid( QChar ).name( ), "INTEGER" }
+				, { typeid( bool ).name( ), "BLOB" }
+				, { "byte", "BLOB" }
+				, { typeid( std::string ).name( ), "TEXT" }
+				, { typeid( std::wstring ).name( ), "TEXT" }
+				, { typeid( QString ).name( ), "TEXT" }
+				, { typeid( char * ).name( ), "TEXT" }
+				, { typeid( QChar * ).name( ), "TEXT" }
+				, { typeid( char [ ] ).name( ), "TEXT" }
+				, { typeid( QChar [ ] ).name( ), "TEXT" }
+				, { "any_num", "NUMERIC" }
+				, { typeid( float ).name( ), "REAL" }
+				, { typeid( double ).name( ), "REAL" }
+				, { typeid( void * ).name( ), "NULL" }
+				, { typeid( std::time_t ).name( ), "DATETIME" }
+				, { typeid( QDate ).name( ), "DATE" }
+				, { typeid( QTime ).name( ), "TIME" }
+				, { typeid( QDateTime ).name( ), "DATETIME" }
+			};
 		}
 		/// <summary>
 		/// 获取表中指定下标的标头名称

@@ -210,6 +210,8 @@ void dbreConverTabTest( const cylDB::Depository_Shared &db_depository_shared ) {
 					qDebug( ) << "\t" << index << " : " << tabInfo->getTitleIndexName( index )->toString( ).toStdString( ).c_str( );
 				qDebug( ) << "============\t输出标头名称结束  ===  单个";
 			}
+
+
 			db_depository_shared->createTab( "tabName 1", { { "type", "TEXT" } }, "key", "INTEGER" );
 			db_depository_shared->createTab( "tabName 2", { { "type", "TEXT" } }, "key", "INTEGER" );
 			db_depository_shared->createTab( "tabName 3", { { "type", "TEXT" } }, "key", "INTEGER" );
@@ -225,6 +227,15 @@ void dbreConverTabTest( const cylDB::Depository_Shared &db_depository_shared ) {
 				}
 				qDebug( ) << "============\t输出标头名称结束  ===  多个";
 			}
+
+			qDebug( ) << "============\t输出支持类型  ===";
+			auto supportType = tabInfo->getSupportType( );
+			auto iterator = supportType.begin( );
+			auto end = supportType.end( );
+			for( ; iterator != end; ++iterator )
+				qDebug( ) << "\t( " << iterator.key( ).toStdString( ).c_str( ) << " : " << iterator.value( ) << ") ";
+
+			qDebug( ) << "============\t输出支持类型结束  ===";
 		} else
 			qDebug( ) << u8"没有任何表";
 	} else
@@ -271,8 +282,10 @@ void dbremoveTabTest_db( cylDB::DB_Shared dbInterface ) {
 		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
 	}
 }
+#include <typeinfo>
 int main( int argc, char *argv[ ] ) {
 	QApplication app( argc, argv );
+	const auto &typeInfo = typeid( int );
 
 	QDir dir( Cache_Path_Dir );
 	auto entryInfoList = dir.entryInfoList( QDir::Files );

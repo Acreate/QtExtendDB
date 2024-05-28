@@ -65,7 +65,12 @@ namespace cylDB {
 		/// 获取所有下标
 		/// </summary>
 		/// <returns>下标列表</returns>
-		virtual std::vector<int> getIndexs() const = 0;
+		virtual std::vector< int > getIndexs( ) const = 0;
+		/// <summary>
+		/// 返回支持类型
+		/// </summary>
+		/// <returns>支持类型映射，使用 typeid( type ) 作为关键字</returns>
+		virtual QVariantMap getSupportType( ) const = 0;
 	};
 
 }
