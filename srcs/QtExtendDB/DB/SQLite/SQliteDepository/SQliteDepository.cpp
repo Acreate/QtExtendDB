@@ -50,23 +50,25 @@ namespace sqlTools {
 	/// </summary>
 	/// <param name="connectionName">链接名称</param>
 	/// <returns>链接</returns>
-	inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName = "qt_sql_default_connection" ) {
-		std::shared_ptr< QSqlDatabase > result;
+	inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName ) {
 		if( QSqlDatabase::contains( connectionName ) )
-			result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
+			return std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
 				, []( QSqlDatabase *p ) {
+					QString connectionName = p->connectionName( );
 					if( p->isOpen( ) )
 						p->close( );
+					QSqlDatabase::removeDatabase( connectionName );
 					delete p;
 				} );
 		else
-			result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
+			return std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
 				, []( QSqlDatabase *p ) {
+					QString connectionName = p->connectionName( );
 					if( p->isOpen( ) )
 						p->close( );
+					QSqlDatabase::removeDatabase( connectionName );
 					delete p;
 				} );
-		return result;
 	}
 	/// <summary>
 	/// 获得 QSqlQuery 的执行返回结果

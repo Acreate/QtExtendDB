@@ -42,7 +42,7 @@ Depository_Shared SQliteDB::openAbsoluteFilePathDepository( const QString &absol
 	if( QFile::exists( absoluteFilePath ) ) {
 		auto qliteDepository = std::make_shared< SQliteDepository >( absoluteFilePath );
 		// 存在，则直接打开
-		if( qliteDepository->isOpen( ) && qliteDepository->open( ) )
+		if( qliteDepository->isOpen( ) || qliteDepository->open( ) )
 			return qliteDepository;
 	}
 	// 不存在，则创建
