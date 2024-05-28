@@ -5,6 +5,7 @@
 #include <QSqlError>
 #include <QSqlResult>
 #include <QSqlQuery>
+#include <QMutex>
 #include <QMap>
 
 using namespace cylDB;
@@ -66,6 +67,7 @@ namespace sqlTools {
 	/// <param name="line">调用行</param>
 	/// <returns>成功返回 true</returns>
 	inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd, const char *file, const size_t line ) {
+
 		QSqlQuery query( *database );
 		bool exec = query.exec( cmd );
 		if( !exec )
@@ -199,7 +201,7 @@ cylDB::SQliteDepository::SQliteDepository( const QString &link_path, const QStri
 	linkPath = fileInfo.absoluteFilePath( );
 	this->user = user;
 	this->password = password;
-
+	this->dbMutex = std::make_shared< QMutex >( );
 
 	if( fileInfo.exists( ) && fileInfo.isFile( ) ) {
 		database = sqlTools::make_QSqlDatabase( linkPath );
@@ -209,6 +211,7 @@ cylDB::SQliteDepository::SQliteDepository( const QString &link_path, const QStri
 }
 cylDB::SQliteDepository::SQliteDepository( const QString &link_path ) {
 	QFileInfo fileInfo( link_path );
+	this->dbMutex = std::make_shared< QMutex >( );
 	if( fileInfo.exists( ) && fileInfo.isFile( ) ) {
 		linkPath = fileInfo.absoluteFilePath( );
 		database = sqlTools::make_QSqlDatabase( linkPath );
@@ -220,6 +223,7 @@ cylDB::SQliteDepository::~SQliteDepository( ) {
 cylDB::SQliteDepository::SQliteDepository( const std::shared_ptr< QSqlDatabase > &database, const QString &db_path ) {
 	this->database = database;
 	linkPath = db_path;
+	this->dbMutex = std::make_shared< QMutex >( );
 }
 QString cylDB::SQliteDepository::getDBName( ) const {
 	if( database )
@@ -246,6 +250,7 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
 	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( u8" ); " );
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
@@ -256,6 +261,7 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd = cmd.arg( tab_name );
 	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( ");" );
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::removeTab( const QString &tab_name ) const {
@@ -264,14 +270,16 @@ bool SQliteDepository::removeTab( const QString &tab_name ) const {
 		return false;
 	QString cmd( R"(DROP TABLE IF EXISTS `%1`;)" );
 	cmd = cmd.arg( tab_name );
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
-	if( element )
+	if( !element )
 		return nullptr;
 	QString cmd = R"( PRAGMA table_info( `%1` ); )";
 	cmd = cmd.arg( tab_name );
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 IResultInfo_Shared SQliteDepository::getAllTab( ) const {
@@ -280,6 +288,7 @@ IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 		return nullptr;
 	QSqlQuery query( *database );
 	auto cmd = R"(SELECT * FROM sqlite_master ;)";
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 
 }
@@ -294,6 +303,7 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) VALUES ( " );
 		sqlTools::append_value( cmd, item_value );
 		cmd.append( " );" );
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 
@@ -315,6 +325,7 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) WHERE" );
 		cmd.append( where );
 		cmd.append( ";" );
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return false;
@@ -327,6 +338,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( R"( FROM )" );
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -343,6 +355,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " " );
 		cmd.append( where );
 		cmd.append( R"(;)" );
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -357,6 +370,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " WHERE " );
 		cmd.append( where );
 		cmd.append( " ;" );
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -367,6 +381,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const 
 		QString cmd = R"(SELECT * FROM )";
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -378,6 +393,7 @@ bool SQliteDepository::removeItem( const QString &tab_name, const QString &where
 	if( !element || where.isEmpty( ) )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " WHERE " + where + " ;";
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::removeItem( const QString &tab_name ) const {
@@ -385,6 +401,7 @@ bool SQliteDepository::removeItem( const QString &tab_name ) const {
 	if( !element )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " ;";
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const {
@@ -395,10 +412,47 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	cmd.append( tab_name ).append( " SET " );
 	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " ;" );
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 // todo : 未实现
 ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
+	QSqlDatabase *element = database.get( );
+	if( !element )
+		return nullptr;
+	QString cmd = R"( PRAGMA table_info( `%1` ); )";
+	cmd = cmd.arg( tab_name );
+	dbMutex->lock( );
+	auto qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	dbMutex->unlock( );
+	if( qSqlQueryRun ) {
+		// 解析表明
+		qSqlQueryRun->resetColIndex( );
+		auto currentRows = qSqlQueryRun->getCurrentRows( );
+		bool nontFind = true;
+		if( currentRows->size( ) > 0 )
+			do {
+				if( !qSqlQueryRun->nextCol( ) )
+					break;
+				currentRows = qSqlQueryRun->getCurrentRows( );
+				if( currentRows->size( ) == 0 )
+					break;
+				if( currentRows->at( 2 )->toString( ) == tab_name || currentRows->at( 3 )->toString( ) == tab_name ) {
+					nontFind = false;
+					break; // 找到
+				}
+			} while( nontFind );
+		if( !nontFind ) {
+			cmd = R"( PRAGMA table_info( `%1` ); )";
+			cmd = cmd.arg( tab_name );
+			dbMutex->lock( );
+			qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+			dbMutex->unlock( );;
+			if(qSqlQueryRun) { // 存在返回值
+				
+			}
+		}
+	}
 	return nullptr;
 }
 // todo : 未实现
@@ -418,6 +472,7 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	cmd.append( " WHERE " );
 	cmd.append( where );
 	cmd.append( " ;" );
+	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 void cylDB::SQliteDepository::setUserInfo( const QString &user, const QString &password ) {

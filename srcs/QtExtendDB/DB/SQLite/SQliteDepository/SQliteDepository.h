@@ -5,7 +5,6 @@
 #include "../../../nameSpace/cylDB.h"
 #include "../../dbInterface/I_DB.h"
 #include "../../dbInterface/i_depositoryInterface/I_Depository.h"
-class QSqlDatabase;
 namespace cylDB {
 	class QTEXTENDDB_EXPORT SQliteDepository : public I_Depository {
 	private:
@@ -13,6 +12,7 @@ namespace cylDB {
 		QString linkPath; // 链接路径
 		QString user; // 用户名称
 		QString password; // 用户密码
+		std::shared_ptr< QMutex > dbMutex;
 	public:
 		SQliteDepository( const QString &link_path, const QString &user, const QString &password );
 		SQliteDepository( const QString &link_path );
@@ -20,7 +20,6 @@ namespace cylDB {
 	private: // 私有成员
 		SQliteDepository( const std::shared_ptr< QSqlDatabase > &database, const QString &db_path );
 	public: // - 接口实现
-
 		/// <summary>
 		/// 获取数据库名称
 		/// </summary>

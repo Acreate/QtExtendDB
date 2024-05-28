@@ -7,6 +7,9 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+
+class QMutex;
+class QSqlDatabase;
 namespace cylDB {
 	/// <summary>
 	/// 数据库接口

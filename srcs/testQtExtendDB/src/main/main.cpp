@@ -192,50 +192,92 @@ void dbItemTest( cylDB::Depository_Shared &db_shared ) {
 	qDebug( ) << u8"\n\n测试完毕	->==================================";
 }
 
-int main( int argc, char *argv[ ] ) {
-	QApplication app( argc, argv );
-	QString sqlitePath( u8"test.db" );
-	auto dbInterface = cylDB::DBTools::linkDB( Cache_Path_Dir );
-	if( !dbInterface->link( ) ) {
-		qDebug( ) << u8"无法链接到目标";
-		return 0;
+void dbreConverTabTest( const cylDB::Depository_Shared &db_depository_shared ) {
+	qDebug( ) << u8"\n\n===============->	表转换对象 -dbreConverTabTest( cylDB::Depository_Shared &db_shared )\n";
+	auto tabName = QDateTime::currentDateTime( ).toString( "yyyy_MM_dd-hh:mm:ss" );
+	auto isCtreate = db_depository_shared->createTab( tabName, { { "type", "TEXT" } } );
+	if( isCtreate ) {
+		qDebug( ) << u8"创建成功 :" << tabName.toStdString( ).c_str( );
+		auto resultInfoShared = db_depository_shared->getAllTab( );
+		if( resultInfoShared ) {
+			outDebug( resultInfoShared );
+			//auto tabInfo = db_depository_shared->converTab( tabName );
+			resultInfoShared = db_depository_shared->getTabInfo( tabName );
+			if( resultInfoShared )
+				outDebug( resultInfoShared );
+		} else
+			qDebug( ) << u8"没有任何表";
+	} else
+		qDebug( ) << u8"创建失败 :" << tabName.toStdString( ).c_str( );
+	qDebug( ) << u8"\n\n测试完毕	->==================================";
+}
+void dbItemTest_db( cylDB::DB_Shared dbInterface ) {
+	QString sqlitePath = "dbItemTest.db";
+	cylDB::Depository_Shared depositoryShared = dbInterface->openDepository( sqlitePath );
+	if( depositoryShared ) {
+		qDebug( ) << u8"打开 : " << depositoryShared->getDBName( ) << u8" 成功";
+		dbItemTest( depositoryShared );
+	} else {
+		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
 	}
-	auto depositoryShared = dbInterface->openDepository( sqlitePath );
+}
+void dbTabTest_db( cylDB::DB_Shared dbInterface ) {
+	QString sqlitePath = "dbTabTest.db";
+	cylDB::Depository_Shared depositoryShared = dbInterface->openDepository( sqlitePath );
+	if( depositoryShared ) {
+		qDebug( ) << u8"打开 : " << depositoryShared->getDBName( ) << u8" 成功";
+		dbreConverTabTest( depositoryShared );
+	} else {
+		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
+	}
+}
+void dbreConverTabTest_db( cylDB::DB_Shared dbInterface ) {
+	QString sqlitePath = "dbreConverTabTest.db";
+	cylDB::Depository_Shared depositoryShared = dbInterface->openDepository( sqlitePath );
+	if( depositoryShared ) {
+		qDebug( ) << u8"打开 : " << depositoryShared->getDBName( ) << u8" 成功";
+		dbreConverTabTest( depositoryShared );
+	} else {
+		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
+	}
+}
+void dbremoveTabTest_db( cylDB::DB_Shared dbInterface ) {
+	QString sqlitePath = u8"dbremoveTabTest.db";
+	cylDB::Depository_Shared depositoryShared = dbInterface->openDepository( sqlitePath );
 	if( depositoryShared ) {
 		qDebug( ) << u8"打开 : " << depositoryShared->getDBName( ) << u8" 成功";
 		dbremoveTabTest( depositoryShared );
 	} else {
 		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
 	}
-	qDebug( ) << u8"===========================================";
-	{
-		QString path( u8"%1%2%3" );
-		path = path.arg( Cache_Path_Dir ).arg( Cmake_Project_Name ).arg( u8".db" );
-		QFileInfo sigDb( path );
-		path = sigDb.absoluteFilePath( );
-		if( sigDb.exists( ) ) {
-			qDebug( ) << u8" -> 删除已经存在的库\t-" << path;
-			bool remove = QFile::remove( path );
-			if( !remove )
-				qDebug( ) << u8" -> 删除已经存在的库\t-失败";
-		}
-		if( sigDb.exists( ) )
-			qDebug( ) << u8" -> 尝试打开 " << path;
-		else
-			qDebug( ) << u8" -> 尝试创建一个有利的数据库\t2";
-		auto depository = dbInterface->openAbsoluteFilePathDepository( path );
-		if( depository ) {
-			if( depository->isOpen( ) ) {
-				qDebug( ) << '\t' << depository->getDBName( ).toStdString( ).c_str( ) << u8" 尝试成功";
-				dbTabTest( depository );
-				dbItemTest( depository );
-			} else
-				qDebug( ) << u8"数据库 (" << path << ") 错误 : " << depository->getLastError( );
-			depository->close( );
-		} else {
-			qDebug( ) << '\t' << path << u8" 尝试失败";
-		}
+}
+int main( int argc, char *argv[ ] ) {
+	QApplication app( argc, argv );
+
+	QDir dir( Cache_Path_Dir );
+	auto entryInfoList = dir.entryInfoList( QDir::Files );
+	for( auto &fileInfo : entryInfoList ) {
+		QString absoluteFilePath = fileInfo.absoluteFilePath( );
+		bool remove = QFile::remove( absoluteFilePath );
+		qDebug( ) << u8"删除文件(" << absoluteFilePath << "):" << ( remove ? u8"成功" : u8"失败" );
 	}
+	qDebug( ) << u8"=================== 进程开始测试 ========================";
+
+	auto dbInterface = cylDB::DBTools::linkDB( Cache_Path_Dir );
+	if( !dbInterface->link( ) ) {
+		qDebug( ) << u8"无法链接到目标";
+		return 0;
+	}
+
+	dbremoveTabTest_db( dbInterface );
+	qDebug( ) << u8"===========================================";
+	dbreConverTabTest_db( dbInterface );
+	qDebug( ) << u8"===========================================";
+	dbTabTest_db( dbInterface );
+	qDebug( ) << u8"===========================================";
+	dbItemTest_db( dbInterface );
+
+	qDebug( ) << u8"=================== 进程结束测试 ========================";
 	qDebug( ) << "\n\n\n\n=============\n" << "int main( int argc, char *argv[ ] ) ";
 	qDebug( ) << "return app.exec( );";
 	return 0;
