@@ -148,6 +148,13 @@ namespace cylDB {
 		/// <returns>失败返回 nullptr</returns>
 		Vector_ITabInfoSPtr_Shared converAllTab( ) const override;
 		/// <summary>
+		/// 执行一个sql命令
+		/// </summary>
+		/// <param name="cmd">命令</param>
+		/// <param name="sql_exec_result">返回</param>
+		/// <returns>成功表示为 true</returns>
+		bool exec( const QString &cmd, IResultInfo_Shared &sql_exec_result ) const override;
+		/// <summary>
 		/// 设置用户信息
 		/// </summary>
 		/// <param name="user">用户名称</param>

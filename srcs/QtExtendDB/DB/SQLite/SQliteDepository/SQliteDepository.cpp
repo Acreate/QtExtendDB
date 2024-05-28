@@ -478,7 +478,6 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
-// todo : 未实现
 ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
 	if( !element )
@@ -516,7 +515,6 @@ ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
 	}
 	return nullptr;
 }
-// todo : 未实现
 Vector_ITabInfoSPtr_Shared SQliteDepository::converAllTab( ) const {
 	QSqlDatabase *element = database.get( );
 	if( !element )
@@ -548,6 +546,16 @@ Vector_ITabInfoSPtr_Shared SQliteDepository::converAllTab( ) const {
 		return resultVector;
 	}
 	return nullptr;
+}
+bool SQliteDepository::exec( const QString &cmd, IResultInfo_Shared &sql_exec_result ) const {
+	QSqlDatabase *element = database.get( );
+	if( element == nullptr )
+		return false;
+	QSqlQuery query( *database );
+	bool exec = query.exec( cmd );
+	sqlTools::out_SQLResult_error( query, exec, cmd, __FILE__, __LINE__ );
+	sql_exec_result = sqlTools::get_QSqlQuery_result( query );
+	return exec;
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const {
 
