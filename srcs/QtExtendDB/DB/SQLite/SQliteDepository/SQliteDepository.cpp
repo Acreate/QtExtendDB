@@ -62,12 +62,14 @@ namespace sqlTools {
 	/// </summary>
 	/// <param name="database">执行数据库</param>
 	/// <param name="cmd">执行命令行</param>
+	/// <param name="file">调用文件名</param>
+	/// <param name="line">调用行</param>
 	/// <returns>成功返回 true</returns>
-	inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd ) {
+	inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd, const char *file, const size_t line ) {
 		QSqlQuery query( *database );
 		bool exec = query.exec( cmd );
 		if( !exec )
-			qDebug( ) << cmd << " : " << query.lastError( ).text( ).toStdString( ).c_str( );
+			qDebug( ) << cmd << "( 行:" << line << ") \n\t*" << file << ": " << query.lastError( );
 		return exec;
 	}
 	/// <summary>
@@ -75,22 +77,26 @@ namespace sqlTools {
 	/// </summary>
 	/// <param name="database">执行数据库</param>
 	/// <param name="cmd">执行命令行</param>
+	/// <param name="file">调用文件名</param>
+	/// <param name="line">调用行</param>
 	/// <returns>成功返回 true</returns>
-	inline bool is_QSqlQuery_run( const std::shared_ptr< QSqlDatabase > &database, const QString &cmd ) {
-		return is_QSqlQuery_run( database.get( ), cmd );
+	inline bool is_QSqlQuery_run( const std::shared_ptr< QSqlDatabase > &database, const QString &cmd, const char *file, const size_t line ) {
+		return is_QSqlQuery_run( database.get( ), cmd, file, line );
 	}
 	/// <summary>
 	/// 执行一条命令，并且返回执行结果
 	/// </summary>
 	/// <param name="database">执行数据库</param>
 	/// <param name="cmd">执行命令行</param>
+	/// <param name="file">调用文件名</param>
+	/// <param name="line">调用行</param>
 	/// <returns>失败返回 nullptr</returns>
-	inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QString &cmd ) {
+	inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QString &cmd, const char *file, const size_t line ) {
 		QSqlQuery query( *database );
 		bool exec = query.exec( cmd );
 		if( exec )
 			return get_QSqlQuery_result( query );
-		qDebug( ) << cmd << " : " << query.lastError( );
+		qDebug( ) << cmd << "( 行:" << line << ") \n\t*" << file << ": " << query.lastError( );
 		return nullptr;
 	}
 	/// <summary>
@@ -240,7 +246,7 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
 	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( u8" ); " );
-	return sqlTools::is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
 	QSqlDatabase *element = database.get( );
@@ -250,7 +256,15 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd = cmd.arg( tab_name );
 	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( ");" );
-	return sqlTools::is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+}
+bool SQliteDepository::removeTab( const QString &tab_name ) const {
+	auto element = database.get( );
+	if( !element )
+		return false;
+	QString cmd( R"(DROP TABLE IF EXISTS `%1`;)" );
+	cmd = cmd.arg( tab_name );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
@@ -258,7 +272,7 @@ IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name 
 		return nullptr;
 	QString cmd = R"( PRAGMA table_info( `%1` ); )";
 	cmd = cmd.arg( tab_name );
-	return sqlTools::get_QSqlQuery_run( element, cmd );
+	return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 	QSqlDatabase *element = database.get( );
@@ -266,7 +280,7 @@ IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 		return nullptr;
 	QSqlQuery query( *database );
 	auto cmd = R"(SELECT * FROM sqlite_master ;)";
-	return sqlTools::get_QSqlQuery_run( element, cmd );
+	return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 
 }
 bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const {
@@ -280,7 +294,7 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) VALUES ( " );
 		sqlTools::append_value( cmd, item_value );
 		cmd.append( " );" );
-		return sqlTools::is_QSqlQuery_run( element, cmd );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 
 	return false;
@@ -301,7 +315,7 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) WHERE" );
 		cmd.append( where );
 		cmd.append( ";" );
-		return sqlTools::is_QSqlQuery_run( element, cmd );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return false;
 }
@@ -313,7 +327,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( R"( FROM )" );
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
-		return sqlTools::get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
 }
@@ -329,7 +343,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " " );
 		cmd.append( where );
 		cmd.append( R"(;)" );
-		return sqlTools::get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
 }
@@ -343,7 +357,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " WHERE " );
 		cmd.append( where );
 		cmd.append( " ;" );
-		return sqlTools::get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
 }
@@ -353,7 +367,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const 
 		QString cmd = R"(SELECT * FROM )";
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
-		return sqlTools::get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
 }
@@ -364,14 +378,14 @@ bool SQliteDepository::removeItem( const QString &tab_name, const QString &where
 	if( !element || where.isEmpty( ) )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " WHERE " + where + " ;";
-	return sqlTools::is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::removeItem( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
 	if( !element )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " ;";
-	return sqlTools::is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const {
 	QSqlDatabase *element = database.get( );
@@ -381,7 +395,15 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	cmd.append( tab_name ).append( " SET " );
 	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " ;" );
-	return sqlTools::is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+}
+// todo : 未实现
+ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
+	return nullptr;
+}
+// todo : 未实现
+Vector_ITabInfoSPtr_Shared SQliteDepository::converAllTab( ) const {
+	return nullptr;
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const {
 
@@ -396,7 +418,7 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	cmd.append( " WHERE " );
 	cmd.append( where );
 	cmd.append( " ;" );
-	return sqlTools::is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 void cylDB::SQliteDepository::setUserInfo( const QString &user, const QString &password ) {
 

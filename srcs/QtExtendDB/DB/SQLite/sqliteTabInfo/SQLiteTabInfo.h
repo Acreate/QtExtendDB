@@ -10,7 +10,6 @@ namespace cylDB {
 		SQLiteTabInfo( ) { }
 	public:
 		QString getName( ) const override;
-		Vector_IResultInfoSPtr_Shared getInfo( ) const override;
 	};
 }
 

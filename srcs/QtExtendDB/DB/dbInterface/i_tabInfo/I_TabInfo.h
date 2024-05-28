@@ -14,11 +14,6 @@ namespace cylDB {
 		/// </summary>
 		/// <returns></returns>
 		virtual QString getName( ) const = 0;
-		/// <summary>
-		/// 获取表信息
-		/// </summary>
-		/// <returns>表信息返回</returns>
-		virtual Vector_IResultInfoSPtr_Shared getInfo( ) const = 0;
 	};
 
 }

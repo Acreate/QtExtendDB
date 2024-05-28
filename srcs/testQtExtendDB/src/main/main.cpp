@@ -38,6 +38,48 @@ void outDebug( cylDB::IResultInfo_Shared &result_info_shared ) {
 
 }
 
+void dbremoveTabTest( cylDB::Depository_Shared &db_shared ) {
+	qDebug( ) << u8"\n\n===============->	删除表测试 -dbremoveTabTest( cylDB::Depository_Shared &db_shared )";
+	QString newTabName = u8"tab1";
+	bool tab = db_shared->createTab( newTabName
+		, { { "one", "TEXT" }, { "two", "TEXT" } } );
+	qDebug( ) << u8"创建 (" << newTabName << ") : " << tab;
+	if( tab ) {
+		qDebug( ) << u8"创建 (" << newTabName << ") : 成功";
+		qDebug( ) << u8"增加表测试 : ";
+		auto resultInfo = db_shared->getAllTab( );
+		outDebug( resultInfo );
+	} else
+		qDebug( ) << u8"创建 (" << newTabName << ") : 失败";
+	qDebug( ) << u8"\n----------------------\n";
+	auto newTabName2 = u8"tab2";
+	tab = db_shared->createTab( newTabName2
+		, { { "one", "TEXT" }, { "two", "TEXT" } }
+		, "key"
+		, "INTEGER" );
+	qDebug( ) << u8"创建 (" << newTabName2 << ") : " << tab;
+	if( tab ) {
+		qDebug( ) << u8"创建 (" << newTabName2 << ") : 成功";
+		qDebug( ) << u8"增加表测试 : ";
+		auto resultInfo = db_shared->getAllTab( );
+		outDebug( resultInfo );
+	} else
+		qDebug( ) << u8"创建 (" << newTabName2 << ") : 失败";
+
+	qDebug( ) << u8"\n----------------------\n";
+	tab = db_shared->removeTab( newTabName );
+	qDebug( ) << u8"删除 (" << newTabName << ") : " << tab;
+	if( tab ) {
+		qDebug( ) << u8"删除 (" << newTabName << ") : 成功";
+		qDebug( ) << u8"删除表测试 : ";
+		auto resultInfo = db_shared->getAllTab( );
+		outDebug( resultInfo );
+	} else
+		qDebug( ) << u8"删除 (" << newTabName << ") : 失败";
+
+	qDebug( ) << u8"\n\n测试完毕	->==================================\n";
+}
+
 void dbTabTest( cylDB::Depository_Shared &db_shared ) {
 	qDebug( ) << u8"\n\n===============->	表测试 -dbTabTest( cylDB::Depository_Shared &db_shared )";
 	QString newTabName = u8"tab1";
@@ -161,6 +203,7 @@ int main( int argc, char *argv[ ] ) {
 	auto depositoryShared = dbInterface->openDepository( sqlitePath );
 	if( depositoryShared ) {
 		qDebug( ) << u8"打开 : " << depositoryShared->getDBName( ) << u8" 成功";
+		dbremoveTabTest( depositoryShared );
 	} else {
 		qDebug( ) << u8"打开 : " << dbInterface->getLink( ) << QDir::separator << sqlitePath << u8" 失败";
 	}

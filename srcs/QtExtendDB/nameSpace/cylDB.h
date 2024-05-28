@@ -97,6 +97,28 @@ namespace cylDB {
 	/// 数据库对象共享指针
 	/// </summary>
 	using Depository_Shared = std::shared_ptr< I_Depository >;
+
+	/// <summary>
+	/// 表对象指针
+	/// </summary>
+	using ITabInfo_Shared = std::shared_ptr< I_TabInfo >;
+	/// <summary>
+	/// 表对象指针列表对象
+	/// </summary>
+	using Vector_ITabInfoSPtr = std::vector< ITabInfo_Shared >;
+	/// <summary>
+	/// 表对象指针列表对象指针
+	/// </summary>
+	using Vector_ITabInfoSPtr_Shared = std::shared_ptr< Vector_ITabInfoSPtr >;
+	/// <summary>
+	/// 映射名称表指针对象
+	/// </summary>
+	using UN_QStringK_ITabInfoSPtrV_Map = std::unordered_map< QString, ITabInfo_Shared >;
+	/// <summary>
+	/// 映射名称表指针对象指针
+	/// </summary>
+	using UN_QStringK_ITabInfoSPtrV_Map_Shared = std::shared_ptr< UN_QStringK_ITabInfoSPtrV_Map >;
+
 	/// <summary>
 	/// 数据库接口基础指针
 	/// </summary>
