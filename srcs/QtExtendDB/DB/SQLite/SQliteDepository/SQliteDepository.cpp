@@ -8,10 +8,43 @@
 #include <QMutex>
 #include <QMap>
 
+#include "../sqliteTabInfo/SQLiteTabInfo.h"
+
 using namespace cylDB;
 
 namespace sqlTools {
+	/// <summary>
+	/// 输出 sqlite 执行的返回
+	/// </summary>
+	/// <param name="result_info_shared">返回对象指针</param>
+	void outDebug( cylDB::IResultInfo_Shared &result_info_shared ) {
+		if( result_info_shared ) {
+			result_info_shared->resetColIndex( );
+			auto sharedPtrs = result_info_shared->getCurrentRows( );
+			size_t count = 1;
+			if( sharedPtrs->size( ) != 0 ) {
+				qDebug( ) << "∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵";
+				QStringList buffMsg;
+				do {
+					for( auto &row : *sharedPtrs )
+						buffMsg.append( row->toString( ) );
+					qDebug( ) << count << '\t' << buffMsg.join( ", " ).toStdString( ).c_str( );
+					bool cond = !result_info_shared->nextCol( );
+					if( cond )
+						break;
+					sharedPtrs = result_info_shared->getCurrentRows( );
+					if( sharedPtrs->size( ) == 0 )
+						break;
+					buffMsg.clear( );
+					++count;
+				} while( true );
+				qDebug( ) << "∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴";
+				return;
+			}
+		}
+		qDebug( ) << "\t" << "result_info_shared 值为 nullptr";
 
+	}
 	/// <summary>
 	/// 创建一个 sqlite链接
 	/// </summary>
@@ -59,6 +92,18 @@ namespace sqlTools {
 		return nullptr;
 	}
 	/// <summary>
+	/// 输出错误信息
+	/// </summary>
+	/// <param name="sql_quert">执行对象</param>
+	/// <param name="exe_result">执行返回</param>
+	/// <param name="cmd">执行命令行</param>
+	/// <param name="file">调用文件</param>
+	/// <param name="line">调用行数</param>
+	inline void out_SQLResult_error( QSqlQuery &sql_quert, bool exe_result, const QString &cmd, const char *file, const size_t line ) {
+		if( !exe_result )
+			qDebug( ) << "\n=====\tQSqlQuery 执行错误\n\"" << cmd.toStdString( ).c_str( ) << "\"\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ) << "\n=====\n";
+	}
+	/// <summary>
 	/// 执行一条命令，并且返回是否执行成功
 	/// </summary>
 	/// <param name="database">执行数据库</param>
@@ -70,8 +115,7 @@ namespace sqlTools {
 
 		QSqlQuery query( *database );
 		bool exec = query.exec( cmd );
-		if( !exec )
-			qDebug( ) << cmd << "( 行:" << line << ") \n\t*" << file << ": " << query.lastError( );
+		out_SQLResult_error( query, exec, cmd, file, line );
 		return exec;
 	}
 	/// <summary>
@@ -98,7 +142,26 @@ namespace sqlTools {
 		bool exec = query.exec( cmd );
 		if( exec )
 			return get_QSqlQuery_result( query );
-		qDebug( ) << cmd << "( 行:" << line << ") \n\t*" << file << ": " << query.lastError( );
+		out_SQLResult_error( query, exec, cmd, file, line );
+		return nullptr;
+	}
+	inline Vector_VarSPtr_Shared find_QSqlQuery_run( cylDB::IResultInfo_Shared &result_info_shared, std::function< bool( const size_t, const Vector_VarSPtr_Shared & ) > call_function ) {
+		auto element = result_info_shared.get( );
+		if( !element )
+			return nullptr;
+		// 解析表明
+		element->resetColIndex( );
+		auto currentRows = element->getCurrentRows( );
+		if( currentRows->size( ) > 0 )
+			do {
+				if( call_function( element->currentCol( ), currentRows ) )
+					return currentRows;
+				if( !element->nextCol( ) )
+					break;
+				currentRows = element->getCurrentRows( );
+				if( currentRows->size( ) == 0 )
+					break;
+			} while( true );
 		return nullptr;
 	}
 	/// <summary>
@@ -420,43 +483,70 @@ ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
 	if( !element )
 		return nullptr;
-	QString cmd = R"( PRAGMA table_info( `%1` ); )";
-	cmd = cmd.arg( tab_name );
+	QString cmd = R"(SELECT * FROM sqlite_master ;)";
 	dbMutex->lock( );
 	auto qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	dbMutex->unlock( );
 	if( qSqlQueryRun ) {
 		// 解析表明
-		qSqlQueryRun->resetColIndex( );
-		auto currentRows = qSqlQueryRun->getCurrentRows( );
-		bool nontFind = true;
-		if( currentRows->size( ) > 0 )
-			do {
-				if( !qSqlQueryRun->nextCol( ) )
-					break;
-				currentRows = qSqlQueryRun->getCurrentRows( );
-				if( currentRows->size( ) == 0 )
-					break;
-				if( currentRows->at( 2 )->toString( ) == tab_name || currentRows->at( 3 )->toString( ) == tab_name ) {
-					nontFind = false;
-					break; // 找到
-				}
-			} while( nontFind );
-		if( !nontFind ) {
+		auto currentRows = sqlTools::find_QSqlQuery_run( qSqlQueryRun
+			, [&]( const size_t index, const Vector_VarSPtr_Shared &vector_var_s )->bool {
+				if( vector_var_s->at( 1 )->toString( ) == tab_name || vector_var_s->at( 2 )->toString( ) == tab_name )
+					return true;
+				return false;
+			} );
+		std::vector< std::shared_ptr< QVariant > > *extent = currentRows.get( );
+		if( extent ) { // 获取表信息
+			ITabInfo_Shared result( std::make_shared< SQLiteTabInfo >( tab_name ) );
 			cmd = R"( PRAGMA table_info( `%1` ); )";
 			cmd = cmd.arg( tab_name );
 			dbMutex->lock( );
 			qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 			dbMutex->unlock( );;
-			if(qSqlQueryRun) { // 存在返回值
-				
-			}
+			currentRows = sqlTools::find_QSqlQuery_run( qSqlQueryRun
+				, [&]( const size_t index, const Vector_VarSPtr_Shared &vector_var_s )->bool {
+					QStringList msgList;
+					if( vector_var_s->size( ) != 6 )
+						return false;
+					result->insterTitle( vector_var_s->at( 0 ), vector_var_s->at( 1 ), vector_var_s->at( 2 ), vector_var_s->at( 3 ), vector_var_s->at( 4 ), vector_var_s->at( 5 ) );
+					return false;
+				} );
+			return result;
 		}
 	}
 	return nullptr;
 }
 // todo : 未实现
 Vector_ITabInfoSPtr_Shared SQliteDepository::converAllTab( ) const {
+	QSqlDatabase *element = database.get( );
+	if( !element )
+		return nullptr;
+	QString cmd = R"(SELECT * FROM sqlite_master ;)";
+	dbMutex->lock( );
+	auto qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	dbMutex->unlock( );
+	if( qSqlQueryRun ) {
+		Vector_ITabInfoSPtr_Shared resultVector( std::make_shared< Vector_ITabInfoSPtr >( ) );
+		// 解析表明
+		sqlTools::find_QSqlQuery_run( qSqlQueryRun
+			, [&]( const size_t index, const Vector_VarSPtr_Shared &vector_var_s )->bool {
+				auto tabName = vector_var_s->at( 2 )->toString( );
+				ITabInfo_Shared result( std::make_shared< SQLiteTabInfo >( tabName ) );
+				resultVector->emplace_back( result );
+				cmd = R"( PRAGMA table_info( `%1` ); )";
+				cmd = cmd.arg( tabName );
+				dbMutex->lock( );
+				auto SubqSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+				dbMutex->unlock( );;
+				sqlTools::find_QSqlQuery_run( SubqSqlQueryRun
+					, [&]( const size_t sub_index, const Vector_VarSPtr_Shared &sub_vector_var_s )->bool {
+						result->insterTitle( sub_vector_var_s );
+						return false;
+					} );
+				return false;
+			} );
+		return resultVector;
+	}
 	return nullptr;
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const {

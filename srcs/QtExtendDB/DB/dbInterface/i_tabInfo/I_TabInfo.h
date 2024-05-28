@@ -15,27 +15,57 @@ namespace cylDB {
 		/// <returns></returns>
 		virtual QString getName( ) const = 0;
 		/// <summary>
-		/// 重命名表
+		/// 插入一个标头
 		/// </summary>
-		/// <param name="new_name">新名</param>
-		/// <returns>成功返回 true</returns>
-		virtual bool reName( const QString &new_name ) =0;
+		/// <param name="vector_var_s">插入的信息来源</param>
+		/// <returns></returns>
+		virtual bool insterTitle( const Vector_VarSPtr_Shared &vector_var_s ) =0;
 		/// <summary>
-		/// 复制表到另外一个表上
+		/// 插入一个标头
 		/// </summary>
-		/// <param name="other_tab">目标表</param>
+		/// <param name="index">标头位于表的下标</param>
+		/// <param name="name">标头名称</param>
+		/// <param name="type">标头类型</param>
+		/// <param name="not_null">标头下的值是否允许等于 nullptr</param>
+		/// <param name="default_value">标头的默认值</param>
+		/// <param name="is_key">是否作为表的主键</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool copyTo( const I_TabInfo *other_tab ) const =0;
+		virtual bool insterTitle( const Var_Shared &index, const Var_Shared &name, const Var_Shared &type, const Var_Shared &not_null, const Var_Shared &default_value, const Var_Shared &is_key ) = 0;
 		/// <summary>
-		/// 删除该表
+		/// 获取表中指定下标的标头名称
 		/// </summary>
-		/// <returns>成功返回 true</returns>
-		virtual bool removeTab( ) = 0;
+		/// <param name="index">下标</param>
+		/// <returns>标头名称</returns>
+		virtual const Var_Shared getTitleIndexName( const size_t index ) const =0;
 		/// <summary>
-		/// 校验该对象是否有效
+		/// 获取表中指定下标的标头类型
 		/// </summary>
-		/// <returns>有效返回 true</returns>
-		virtual bool isValid( ) const =0;
+		/// <param name="index">下标</param>
+		/// <returns>标头类型</returns>
+		virtual const Var_Shared getTitleIndexType( const size_t index ) const =0;
+		/// <summary>
+		/// 获取表中指定下标的标头可空标识位
+		/// </summary>
+		/// <param name="index">下标</param>
+		/// <returns>可空标识位</returns>
+		virtual const Var_Shared getTitleIndexIsNotnull( const size_t index ) const =0;
+		/// <summary>
+		/// 获取表中指定下标的标头默认值
+		/// </summary>
+		/// <param name="index">下标</param>
+		/// <returns>标头默认值</returns>
+		virtual const Var_Shared getTitleIndexDefultValue( const size_t index ) const =0;
+		/// <summary>
+		/// 获取表中指定下标的标头值是否为主键
+		/// </summary>
+		/// <param name="index">下标</param>
+		/// <returns>标头值是否为主键</returns>
+		virtual const Var_Shared getTitleIndexIsPK( const size_t index ) const =0;
+		/// <summary>
+		/// 获取所有下标
+		/// </summary>
+		/// <returns>下标列表</returns>
+		virtual std::vector<int> getIndexs() const = 0;
 	};
 
 }

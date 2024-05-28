@@ -60,6 +60,11 @@ namespace cylDB {
 		/// 下一行
 		/// </summary>
 		virtual bool nextCol( ) = 0;
+		/// <summary>
+		/// 当前列
+		/// </summary>
+		/// <returns>列数</returns>
+		virtual size_t currentCol( ) = 0;
 	};
 }
 

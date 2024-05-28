@@ -2,6 +2,7 @@
 #include <DB/DBTools.h>
 #include <DB/dbInterface/i_depositoryInterface/I_Depository.h>
 #include <DB/dbInterface/i_resultInfo/I_ResultInfo.h>
+#include <DB/dbInterface/i_tabInfo/I_TabInfo.h>
 #include <DB/dbInterface/I_DB.h>
 #include <qdatetime.h>
 #include <QDir>
@@ -195,16 +196,35 @@ void dbItemTest( cylDB::Depository_Shared &db_shared ) {
 void dbreConverTabTest( const cylDB::Depository_Shared &db_depository_shared ) {
 	qDebug( ) << u8"\n\n===============->	表转换对象 -dbreConverTabTest( cylDB::Depository_Shared &db_shared )\n";
 	auto tabName = QDateTime::currentDateTime( ).toString( "yyyy_MM_dd-hh:mm:ss" );
-	auto isCtreate = db_depository_shared->createTab( tabName, { { "type", "TEXT" } } );
+	auto isCtreate = db_depository_shared->createTab( tabName, { { "type", "TEXT" } }, "key", "INTEGER" );
 	if( isCtreate ) {
 		qDebug( ) << u8"创建成功 :" << tabName.toStdString( ).c_str( );
 		auto resultInfoShared = db_depository_shared->getAllTab( );
 		if( resultInfoShared ) {
 			outDebug( resultInfoShared );
-			//auto tabInfo = db_depository_shared->converTab( tabName );
-			resultInfoShared = db_depository_shared->getTabInfo( tabName );
-			if( resultInfoShared )
-				outDebug( resultInfoShared );
+			auto tabInfo = db_depository_shared->converTab( tabName );
+			if( tabInfo ) {
+				qDebug( ) << "============\t输出标头名称信息  ===  单个";
+				auto vector = tabInfo->getIndexs( );
+				for( auto index : vector )
+					qDebug( ) << "\t" << index << " : " << tabInfo->getTitleIndexName( index )->toString( ).toStdString( ).c_str( );
+				qDebug( ) << "============\t输出标头名称结束  ===  单个";
+			}
+			db_depository_shared->createTab( "tabName 1", { { "type", "TEXT" } }, "key", "INTEGER" );
+			db_depository_shared->createTab( "tabName 2", { { "type", "TEXT" } }, "key", "INTEGER" );
+			db_depository_shared->createTab( "tabName 3", { { "type", "TEXT" } }, "key", "INTEGER" );
+			db_depository_shared->createTab( "tabName 4", { { "type", "TEXT" } }, "key", "INTEGER" );
+			auto tabInfos = db_depository_shared->converAllTab( );
+			if( tabInfos ) {
+				qDebug( ) << "============\t输出标头名称信息  ===  多个";
+				for( auto &tabSPtr : *tabInfos ) {
+					auto vector = tabSPtr->getIndexs( );
+					for( auto index : vector )
+						qDebug( ) << "\t[" << tabSPtr->getName( ) << "." << index << "]: " << tabInfo->getTitleIndexName( index )->toString( ).toStdString( ).c_str( );
+					qDebug( ) << "----------------";
+				}
+				qDebug( ) << "============\t输出标头名称结束  ===  多个";
+			}
 		} else
 			qDebug( ) << u8"没有任何表";
 	} else
@@ -269,13 +289,13 @@ int main( int argc, char *argv[ ] ) {
 		return 0;
 	}
 
-	dbremoveTabTest_db( dbInterface );
-	qDebug( ) << u8"===========================================";
+	//dbremoveTabTest_db( dbInterface );
+	//qDebug( ) << u8"===========================================";
 	dbreConverTabTest_db( dbInterface );
-	qDebug( ) << u8"===========================================";
-	dbTabTest_db( dbInterface );
-	qDebug( ) << u8"===========================================";
-	dbItemTest_db( dbInterface );
+	//qDebug( ) << u8"===========================================";
+	//dbTabTest_db( dbInterface );
+	//qDebug( ) << u8"===========================================";
+	//dbItemTest_db( dbInterface );
 
 	qDebug( ) << u8"=================== 进程结束测试 ========================";
 	qDebug( ) << "\n\n\n\n=============\n" << "int main( int argc, char *argv[ ] ) ";

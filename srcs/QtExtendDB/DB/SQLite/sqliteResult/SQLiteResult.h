@@ -43,6 +43,9 @@ namespace cylDB {
 			tabSPtr->clear( );
 			currentTabIndex = 0;
 		}
+		size_t currentCol( ) override {
+			return readTabIndex;
+		}
 		bool nextCol( ) override {
 			if( readTabIndex >= currentTabIndex )
 				return false;
