@@ -5,6 +5,8 @@
 #include "../../../nameSpace/cylDB.h"
 #include "../../dbInterface/I_DB.h"
 #include "../../dbInterface/i_depositoryInterface/I_Depository.h"
+#include <QSqlQuery>
+#include <QMutex>
 namespace cylDB {
 	class QTEXTENDDB_EXPORT SQliteDepository : public I_Depository {
 	private:
@@ -13,6 +15,7 @@ namespace cylDB {
 		QString user; // 用户名称
 		QString password; // 用户密码
 		std::shared_ptr< QMutex > dbMutex;
+		bool isTransaction = false;
 	public:
 		SQliteDepository( const QString &link_path, const QString &user, const QString &password );
 		SQliteDepository( const QString &link_path );
@@ -154,6 +157,43 @@ namespace cylDB {
 		/// <param name="sql_exec_result">返回</param>
 		/// <returns>成功表示为 true</returns>
 		bool exec( const QString &cmd, IResultInfo_Shared &sql_exec_result ) const override;
+		/// <summary>
+		/// 生成一个执行器
+		/// </summary>
+		/// <returns>执行器指针对象，失败返回 nullptr</returns>
+		std::shared_ptr< QSqlQuery > generateSqlQuery( ) const override {
+			return std::make_shared< QSqlQuery >( *database );
+		}
+		/// <summary>
+		/// 提交事务
+		/// </summary>
+		/// <returns>失败返回 false</returns>
+		bool commit( ) override {
+			if( isTransaction )
+				dbMutex->unlock( );
+			isTransaction = false;
+			return database->commit( );
+		}
+		/// <summary>
+		/// 开始事务
+		/// </summary>
+		/// <returns>不支持返回 false</returns>
+		bool transaction( ) override {
+			isTransaction = database->transaction( );
+			if( isTransaction )
+				dbMutex->lock( );
+			return isTransaction;
+		}
+		/// <summary>
+		/// 回滚事务
+		/// </summary>
+		/// <returns>失败返回 false</returns>
+		bool rollback( ) override {
+			if( isTransaction )
+				dbMutex->unlock( );
+			isTransaction = false;
+			return database->rollback( );
+		}
 		/// <summary>
 		/// 设置用户信息
 		/// </summary>

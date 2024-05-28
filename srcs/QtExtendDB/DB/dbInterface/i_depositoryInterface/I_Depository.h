@@ -5,6 +5,7 @@
 #include <qstring.h>
 
 #include "../../../nameSpace/cylDB.h"
+class QSqlQuery;
 namespace cylDB {
 	class QTEXTENDDB_EXPORT I_Depository {
 	public:
@@ -144,7 +145,28 @@ namespace cylDB {
 		/// <param name="cmd">命令</param>
 		/// <param name="sql_exec_result">返回</param>
 		/// <returns>成功表示为 true</returns>
-		virtual bool exec(const QString& cmd, IResultInfo_Shared& sql_exec_result) const = 0;
+		virtual bool exec( const QString &cmd, IResultInfo_Shared &sql_exec_result ) const = 0;
+		/// <summary>
+		/// 生成一个执行器
+		/// </summary>
+		/// <returns>执行器指针对象，失败返回 nullptr</returns>
+		virtual std::shared_ptr< QSqlQuery > generateSqlQuery( ) const = 0;
+		/// <summary>
+		/// 提交事务
+		/// </summary>
+		/// <returns>失败返回 false</returns>
+		virtual bool commit( ) = 0;
+		/// <summary>
+		/// 开始事务
+		/// </summary>
+		/// <returns>不支持返回 false</returns>
+		virtual bool transaction( ) =0;
+		/// <summary>
+		/// 回滚事务
+		/// </summary>
+		/// <returns>失败返回 false</returns>
+		virtual bool rollback( ) = 0;
+
 		/// <summary>
 		/// 设置用户信息
 		/// </summary>

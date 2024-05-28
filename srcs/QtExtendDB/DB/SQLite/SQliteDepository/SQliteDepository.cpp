@@ -315,7 +315,10 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
 	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( u8" ); " );
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
@@ -326,7 +329,10 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd = cmd.arg( tab_name );
 	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( ");" );
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::removeTab( const QString &tab_name ) const {
@@ -335,7 +341,10 @@ bool SQliteDepository::removeTab( const QString &tab_name ) const {
 		return false;
 	QString cmd( R"(DROP TABLE IF EXISTS `%1`;)" );
 	cmd = cmd.arg( tab_name );
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
@@ -344,7 +353,10 @@ IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name 
 		return nullptr;
 	QString cmd = R"( PRAGMA table_info( `%1` ); )";
 	cmd = cmd.arg( tab_name );
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 IResultInfo_Shared SQliteDepository::getAllTab( ) const {
@@ -353,7 +365,11 @@ IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 		return nullptr;
 	QSqlQuery query( *database );
 	auto cmd = R"(SELECT * FROM sqlite_master ;)";
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+
+	if( isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 
 }
@@ -368,7 +384,10 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) VALUES ( " );
 		sqlTools::append_value( cmd, item_value );
 		cmd.append( " );" );
-		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		if( !isTransaction ) {
+			QMutexLocker< QMutex > locker( dbMutex.get( ) );
+			return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		}
 		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 
@@ -390,7 +409,10 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) WHERE" );
 		cmd.append( where );
 		cmd.append( ";" );
-		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		if( !isTransaction ) {
+			QMutexLocker< QMutex > locker( dbMutex.get( ) );
+			return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		}
 		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return false;
@@ -403,7 +425,10 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( R"( FROM `)" );
 		cmd.append( tab_name );
 		cmd.append( R"(`;)" );
-		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		if( isTransaction ) {
+			QMutexLocker< QMutex > locker( dbMutex.get( ) );
+			return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		}
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -420,7 +445,10 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( "` " );
 		cmd.append( where );
 		cmd.append( R"(;)" );
-		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		if( isTransaction ) {
+			QMutexLocker< QMutex > locker( dbMutex.get( ) );
+			return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		}
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -435,7 +463,10 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( "` WHERE " );
 		cmd.append( where );
 		cmd.append( " ;" );
-		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		if( isTransaction ) {
+			QMutexLocker< QMutex > locker( dbMutex.get( ) );
+			return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		}
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
 	return nullptr;
@@ -446,8 +477,12 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const 
 		QString cmd = R"(SELECT * FROM `)";
 		cmd.append( tab_name );
 		cmd.append( R"(`;)" );
-		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		if( isTransaction ) {
+			QMutexLocker< QMutex > locker( dbMutex.get( ) );
+			return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		}
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+
 	}
 	return nullptr;
 }
@@ -458,7 +493,10 @@ bool SQliteDepository::removeItem( const QString &tab_name, const QString &where
 	if( !element || where.isEmpty( ) )
 		return false;
 	QString cmd = QString( "DELETE FROM `" ) + tab_name + "` WHERE " + where + " ;";
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::removeItem( const QString &tab_name ) const {
@@ -466,7 +504,10 @@ bool SQliteDepository::removeItem( const QString &tab_name ) const {
 	if( !element )
 		return false;
 	QString cmd = QString( "DELETE FROM `" ) + tab_name + "` ;";
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const {
@@ -477,7 +518,10 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	cmd.append( tab_name ).append( "` SET " );
 	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " ;" );
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
 ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
@@ -485,9 +529,15 @@ ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
 	if( !element )
 		return nullptr;
 	QString cmd = R"(SELECT * FROM sqlite_master ;)";
-	dbMutex->lock( );
-	auto qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
-	dbMutex->unlock( );
+	IResultInfo_Shared qSqlQueryRun;
+	if( isTransaction )
+		qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	else {
+		dbMutex->lock( );
+		qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		dbMutex->unlock( );
+	}
+
 	if( qSqlQueryRun ) {
 		// 解析表明
 		auto currentRows = sqlTools::find_QSqlQuery_run( qSqlQueryRun
@@ -501,9 +551,14 @@ ITabInfo_Shared SQliteDepository::converTab( const QString &tab_name ) const {
 			ITabInfo_Shared result( std::make_shared< SQLiteTabInfo >( tab_name ) );
 			cmd = R"( PRAGMA table_info( `%1` ); )";
 			cmd = cmd.arg( tab_name );
-			dbMutex->lock( );
-			qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
-			dbMutex->unlock( );;
+			if( isTransaction )
+				qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+			else {
+				dbMutex->lock( );
+				qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+				dbMutex->unlock( );;
+			}
+
 			currentRows = sqlTools::find_QSqlQuery_run( qSqlQueryRun
 				, [&]( const size_t index, const Vector_VarSPtr_Shared &vector_var_s )->bool {
 					QStringList msgList;
@@ -522,9 +577,14 @@ Vector_ITabInfoSPtr_Shared SQliteDepository::converAllTab( ) const {
 	if( !element )
 		return nullptr;
 	QString cmd = R"(SELECT * FROM sqlite_master ;)";
-	dbMutex->lock( );
-	auto qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
-	dbMutex->unlock( );
+	IResultInfo_Shared qSqlQueryRun;
+	if( isTransaction )
+		qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	else {
+		dbMutex->lock( );
+		qSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+		dbMutex->unlock( );
+	}
 	if( qSqlQueryRun ) {
 		Vector_ITabInfoSPtr_Shared resultVector( std::make_shared< Vector_ITabInfoSPtr >( ) );
 		// 解析表明
@@ -535,14 +595,23 @@ Vector_ITabInfoSPtr_Shared SQliteDepository::converAllTab( ) const {
 				resultVector->emplace_back( result );
 				cmd = R"( PRAGMA table_info( `%1` ); )";
 				cmd = cmd.arg( tabName );
-				dbMutex->lock( );
-				auto SubqSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
-				dbMutex->unlock( );;
-				sqlTools::find_QSqlQuery_run( SubqSqlQueryRun
-					, [&]( const size_t sub_index, const Vector_VarSPtr_Shared &sub_vector_var_s )->bool {
-						result->insterTitle( sub_vector_var_s );
-						return false;
-					} );
+				if( isTransaction ) {
+					auto SubqSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+					sqlTools::find_QSqlQuery_run( SubqSqlQueryRun
+						, [&]( const size_t sub_index, const Vector_VarSPtr_Shared &sub_vector_var_s )->bool {
+							result->insterTitle( sub_vector_var_s );
+							return false;
+						} );
+				} else {
+					dbMutex->lock( );
+					auto SubqSqlQueryRun = sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+					dbMutex->unlock( );;
+					sqlTools::find_QSqlQuery_run( SubqSqlQueryRun
+						, [&]( const size_t sub_index, const Vector_VarSPtr_Shared &sub_vector_var_s )->bool {
+							result->insterTitle( sub_vector_var_s );
+							return false;
+						} );
+				}
 				return false;
 			} );
 		return resultVector;
@@ -572,8 +641,12 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	cmd.append( " WHERE " );
 	cmd.append( where );
 	cmd.append( " ;" );
-	QMutexLocker< QMutex > locker( dbMutex.get( ) );
+	if( !isTransaction ) {
+		QMutexLocker< QMutex > locker( dbMutex.get( ) );
+		return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+	}
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
+
 }
 void cylDB::SQliteDepository::setUserInfo( const QString &user, const QString &password ) {
 
