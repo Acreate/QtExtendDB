@@ -60,14 +60,8 @@ namespace cylDB {
 		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const override;
 		IResultInfo_Shared findItems( const QString &tab_name, const QString &where ) const override;
 		IResultInfo_Shared findItems( const QString &tab_name ) const override;
-		/// <summary>
-		/// 删除表中的一项
-		/// </summary>
-		/// <param name="tab_name">表名称</param>
-		/// <param name="item_name">项名</param>
-		/// <returns>成功返回 true</returns>
-		bool removeItem( const QString &tab_name, const QString &item_name ) const override;
 		bool updateItem( const QString &tab_name, QMap<QVariant, QVariant> var_map_s ) const override;
+		bool removeItem( const QString &tab_name, const QString &where ) const override;
 		/// <summary>
 		/// 设置用户信息
 		/// </summary>

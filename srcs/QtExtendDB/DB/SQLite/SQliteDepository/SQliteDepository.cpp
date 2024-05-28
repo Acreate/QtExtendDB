@@ -53,6 +53,9 @@ inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd )
 		qDebug( ) << cmd << " : " << query.lastError( ).text( ).toStdString( ).c_str( );
 	return exec;
 }
+inline bool is_QSqlQuery_run( const std::shared_ptr< QSqlDatabase > &database, const QString &cmd ) {
+	return is_QSqlQuery_run( database.get( ), cmd );
+}
 inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QString &cmd ) {
 	QSqlQuery query( *database );
 	bool exec = query.exec( cmd );
@@ -273,11 +276,15 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const 
 	return nullptr;
 }
 
-bool cylDB::SQliteDepository::removeItem( const QString &tab_name, const QString &item_name ) const {
-	return false;
-}
+
 bool SQliteDepository::updateItem( const QString &tab_name, QMap< QVariant, QVariant > var_map_s ) const {
 	return false;
+}
+bool SQliteDepository::removeItem( const QString &tab_name, const QString &where ) const {
+	if( !database || where.isEmpty( ) )
+		return false;
+	QString cmd = QString( "DELETE FROM " ) + tab_name + " WHERE " + where + " ;";
+	return is_QSqlQuery_run( database, cmd );
 }
 void cylDB::SQliteDepository::setUserInfo( const QString &user, const QString &password ) {
 

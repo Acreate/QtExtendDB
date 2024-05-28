@@ -97,9 +97,9 @@ namespace cylDB {
 		/// 删除表中的一项
 		/// </summary>
 		/// <param name="tab_name">表名称</param>
-		/// <param name="item_name">项名</param>
+		/// <param name="where">条件</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool removeItem( const QString &tab_name, const QString &item_name ) const = 0;
+		virtual bool removeItem( const QString &tab_name, const QString &where ) const = 0;
 		/// <summary>
 		/// 在表当中更新数据
 		/// </summary>
