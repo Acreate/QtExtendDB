@@ -109,7 +109,42 @@ void dbItemTest( cylDB::Depository_Shared &db_shared ) {
 		} else
 			qDebug( ) << u8"\t删除失败 2 : " << addItem;
 
+		qDebug( ) << u8"\n\n----------------------\n";
 
+		qDebug( ) << u8"更新项测试 : ";
+		qDebug( ) << u8"\t获取所有成员 : ";
+		resultInfo = db_shared->findItems( newTabName );
+		outDebug( resultInfo );
+		where = "age = 22";
+		qDebug( ) << u8"\t更新指定成员 : " << where;
+		auto updateItem = db_shared->updateItem( newTabName, { { "two", R"("更新了")" } }, where );
+		if( updateItem ) {
+
+			qDebug( ) << u8"\t更新成功 3 : " << addItem;
+			qDebug( ) << u8"\t获取所有成员 : ";
+			resultInfo = db_shared->findItems( newTabName );
+			outDebug( resultInfo );
+		} else
+			qDebug( ) << u8"\t更新失败 3 : " << addItem;
+		qDebug( ) << u8"\t更新所有成员 : ";
+		updateItem = db_shared->updateItem( newTabName, { { "two", R"("更新了2")" }, { "one", R"("更新了2")" } } );
+		if( updateItem ) {
+			qDebug( ) << u8"\t更新成功 3 : " << addItem;
+			qDebug( ) << u8"\t获取所有成员 : ";
+			resultInfo = db_shared->findItems( newTabName );
+			outDebug( resultInfo );
+		} else
+			qDebug( ) << u8"\t更新失败 3 : " << addItem;
+
+		qDebug( ) << u8"\t删除所有成员 : ";
+		subItem = db_shared->removeItem( newTabName );
+		if( subItem ) {
+			qDebug( ) << u8"\t删除成功 2 : " << subItem;
+			qDebug( ) << u8"\t获取所有成员 : ";
+			resultInfo = db_shared->findItems( newTabName );
+			outDebug( resultInfo );
+		} else
+			qDebug( ) << u8"\t删除失败 2 : " << addItem;
 	} else
 		qDebug( ) << u8"创建 (" << newTabName << ") : 失败";
 	qDebug( ) << u8"\n\n测试完毕	->==================================";

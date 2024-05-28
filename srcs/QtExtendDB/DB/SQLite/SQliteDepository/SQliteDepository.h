@@ -54,14 +54,16 @@ namespace cylDB {
 		/// <returns>返回所有列的信息</returns>
 		IResultInfo_Shared getTabInfo( const QString &tab_name ) const override;
 		IResultInfo_Shared getAllTab( ) const override;
-		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const override;
 		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value, const QString &where ) const override;
-		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name ) const override;
+		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const override ;
 		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const override;
+		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name ) const override ;
 		IResultInfo_Shared findItems( const QString &tab_name, const QString &where ) const override;
-		IResultInfo_Shared findItems( const QString &tab_name ) const override;
-		bool updateItem( const QString &tab_name, QMap<QVariant, QVariant> var_map_s ) const override;
+		IResultInfo_Shared findItems( const QString &tab_name ) const override ;
 		bool removeItem( const QString &tab_name, const QString &where ) const override;
+		bool removeItem( const QString &tab_name ) const override ;
+		bool updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const override;
+		bool updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const override;
 		/// <summary>
 		/// 设置用户信息
 		/// </summary>

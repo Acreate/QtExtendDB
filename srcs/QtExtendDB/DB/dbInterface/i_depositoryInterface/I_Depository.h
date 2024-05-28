@@ -101,12 +101,27 @@ namespace cylDB {
 		/// <returns>成功返回 true</returns>
 		virtual bool removeItem( const QString &tab_name, const QString &where ) const = 0;
 		/// <summary>
+		/// 删除表中所有的项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <returns>成功返回 true</returns>
+		virtual bool removeItem( const QString &tab_name ) const = 0;
+		/// <summary>
 		/// 在表当中更新数据
 		/// </summary>
 		/// <param name="tab_name">表名称</param>
 		/// <param name="var_map_s">数据列表</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool updateItem( const QString &tab_name, QMap< QVariant, QVariant > var_map_s ) const = 0;
+		virtual bool updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const = 0;
+		
+		/// <summary>
+		/// 在表当中更新数据
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="var_map_s">数据列表</param>
+		/// <param name="where">条件</param>
+		/// <returns>成功返回 true</returns>
+		virtual bool updateItem( const QString &tab_name, const QVariantMap &var_map_s , const QString& where) const = 0;
 		/// <summary>
 		/// 设置用户信息
 		/// </summary>

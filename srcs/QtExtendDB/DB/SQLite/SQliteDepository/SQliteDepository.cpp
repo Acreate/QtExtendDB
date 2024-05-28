@@ -64,7 +64,7 @@ inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QStri
 	qDebug( ) << cmd << " : " << query.lastError( );
 	return nullptr;
 }
-inline qsizetype append_map( QString &cmd, const QVariantMap &append_map ) {
+inline qsizetype append_map_create_tab( QString &cmd, const QVariantMap &append_map ) {
 	qsizetype result = 0;
 	auto iterator = append_map.begin( );
 	auto end = append_map.end( );
@@ -72,6 +72,24 @@ inline qsizetype append_map( QString &cmd, const QVariantMap &append_map ) {
 		cmd.append( " `" );
 		cmd.append( iterator.key( ) );
 		cmd.append( "` " );
+		cmd.append( iterator.value( ).toString( ) );
+		++iterator;
+		++result;
+		if( iterator == end )
+			break;
+		cmd.append( ", " );
+	} while( true );
+
+	return result;
+}
+inline qsizetype append_map_update( QString &cmd, const QVariantMap &append_map ) {
+	qsizetype result = 0;
+	auto iterator = append_map.begin( );
+	auto end = append_map.end( );
+	do {
+		cmd.append( " `" );
+		cmd.append( iterator.key( ) );
+		cmd.append( "` =" );
 		cmd.append( iterator.value( ).toString( ) );
 		++iterator;
 		++result;
@@ -151,10 +169,11 @@ bool cylDB::SQliteDepository::hasTab( const QString &tab_name ) const {
 	return database->tables( ).contains( tab_name );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info, const QString &key, const QString &key_type ) const {
-	if( !database || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
-		return false;
 	if( key.isEmpty( ) )
 		return createTab( tab_name, tab_info );
+	QSqlDatabase *element = database.get( );
+	if( !element || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
+		return false;
 
 	QString cmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
 	cmd = cmd.arg( tab_name );
@@ -164,38 +183,41 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd.append( "` " );
 	cmd.append( key_type );
 	cmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
-	append_map( cmd, tab_info );
+	append_map_create_tab( cmd, tab_info );
 	cmd.append( u8" ); " );
-	return is_QSqlQuery_run( database.get( ), cmd );
+	return is_QSqlQuery_run( element, cmd );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
-	if( !database || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
+	QSqlDatabase *element = database.get( );
+	if( !element || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
 		return false;
 	QString cmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
 	cmd = cmd.arg( tab_name );
-	append_map( cmd, tab_info );
+	append_map_create_tab( cmd, tab_info );
 	cmd.append( ");" );
-	return is_QSqlQuery_run( database.get( ), cmd );
+	return is_QSqlQuery_run( element, cmd );
 }
 IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
-	if( database ) {
-		QString cmd = R"( PRAGMA table_info( `%1` ); )";
-		cmd = cmd.arg( tab_name );
-		return get_QSqlQuery_run( database.get( ), cmd );
-	}
-	return nullptr;
+	QSqlDatabase *element = database.get( );
+	if( element )
+		return nullptr;
+	QString cmd = R"( PRAGMA table_info( `%1` ); )";
+	cmd = cmd.arg( tab_name );
+	return get_QSqlQuery_run( element, cmd );
 }
 IResultInfo_Shared SQliteDepository::getAllTab( ) const {
-	if( database ) {
-		QSqlQuery query( *database );
-		auto cmd = R"(SELECT * FROM sqlite_master ;)";
-		return get_QSqlQuery_run( database.get( ), cmd );
-	}
-	return nullptr;
+	QSqlDatabase *element = database.get( );
+	if( !element )
+		return nullptr;
+	QSqlQuery query( *database );
+	auto cmd = R"(SELECT * FROM sqlite_master ;)";
+	return get_QSqlQuery_run( element, cmd );
+
 }
 bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const {
 	if( database ) {
-		if( item_name.size( ) == 0 || item_value.size( ) == 0 )
+		QSqlDatabase *element = database.get( );
+		if( !element || item_name.size( ) == 0 || item_value.size( ) == 0 )
 			return false;
 		QString cmd = R"(INSERT INTO )";
 		cmd.append( tab_name ).append( "( " );
@@ -203,18 +225,19 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) VALUES ( " );
 		append_value( cmd, item_value );
 		cmd.append( " );" );
-		return is_QSqlQuery_run( database.get( ), cmd );
+		return is_QSqlQuery_run( element, cmd );
 	}
 
 	return false;
 }
 bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value, const QString &where ) const {
-	if( database ) {
+	if( where.isEmpty( ) )
+		return addItem( tab_name, item_name, item_value );
+
+	QSqlDatabase *element = database.get( );
+	if( element ) {
 		if( item_name.size( ) == 0 || item_value.size( ) == 0 )
 			return false;
-		if( where.isEmpty( ) )
-			return addItem( tab_name, item_name, item_value );
-
 		QString cmd = R"(INSERT INTO `)";
 		cmd.append( tab_name ).append( "` ( `" );
 		append_name( cmd, item_name );
@@ -223,23 +246,25 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		cmd.append( " ) WHERE" );
 		cmd.append( where );
 		cmd.append( ";" );
-		return is_QSqlQuery_run( database.get( ), cmd );
+		return is_QSqlQuery_run( element, cmd );
 	}
 	return false;
 }
 IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const QStringList &item_name ) const {
-	if( database ) {
+	QSqlDatabase *element = database.get( );
+	if( element ) {
 		QString cmd = R"(SELECT  )";
 		append_name( cmd, item_name );
 		cmd.append( R"( FROM )" );
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
-		return get_QSqlQuery_run( database.get( ), cmd );
+		return get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
 IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const {
-	if( database ) {
+	QSqlDatabase *element = database.get( );
+	if( element ) {
 		if( where.isEmpty( ) )
 			return findItems( tab_name, item_name );
 		QString cmd = R"(SELECT  )";
@@ -249,12 +274,13 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " " );
 		cmd.append( where );
 		cmd.append( R"(;)" );
-		return get_QSqlQuery_run( database.get( ), cmd );
+		return get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
 IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const QString &where ) const {
-	if( database ) {
+	QSqlDatabase *element = database.get( );
+	if( element ) {
 		if( where.isEmpty( ) )
 			return findItems( tab_name );
 		QString cmd = R"(SELECT * FROM )";
@@ -262,29 +288,60 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " WHERE " );
 		cmd.append( where );
 		cmd.append( " ;" );
-		return get_QSqlQuery_run( database.get( ), cmd );
+		return get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
 IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const {
-	if( database ) {
+	QSqlDatabase *element = database.get( );
+	if( element ) {
 		QString cmd = R"(SELECT * FROM )";
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
-		return get_QSqlQuery_run( database.get( ), cmd );
+		return get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
 
 
-bool SQliteDepository::updateItem( const QString &tab_name, QMap< QVariant, QVariant > var_map_s ) const {
-	return false;
-}
 bool SQliteDepository::removeItem( const QString &tab_name, const QString &where ) const {
-	if( !database || where.isEmpty( ) )
+	QSqlDatabase *element = database.get( );
+	if( !element || where.isEmpty( ) )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " WHERE " + where + " ;";
-	return is_QSqlQuery_run( database, cmd );
+	return is_QSqlQuery_run( element, cmd );
+}
+bool SQliteDepository::removeItem( const QString &tab_name ) const {
+	QSqlDatabase *element = database.get( );
+	if( !element )
+		return false;
+	QString cmd = QString( "DELETE FROM " ) + tab_name + " ;";
+	return is_QSqlQuery_run( element, cmd );
+}
+bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const {
+	QSqlDatabase *element = database.get( );
+	if( !element || var_map_s.isEmpty( ) )
+		return false;
+	QString cmd = "UPDATE ";
+	cmd.append( tab_name ).append( " SET " );
+	append_map_update( cmd, var_map_s );
+	cmd.append( " ;" );
+	return is_QSqlQuery_run( element, cmd );
+}
+bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const {
+
+	if( where.isEmpty( ) )
+		return updateItem( tab_name, var_map_s );
+	QSqlDatabase *element = database.get( );
+	if( !element || var_map_s.isEmpty( ) )
+		return false;
+	QString cmd = "UPDATE ";
+	cmd.append( tab_name ).append( " SET " );
+	append_map_update( cmd, var_map_s );
+	cmd.append( " WHERE " );
+	cmd.append( where );
+	cmd.append( " ;" );
+	return is_QSqlQuery_run( element, cmd );
 }
 void cylDB::SQliteDepository::setUserInfo( const QString &user, const QString &password ) {
 
