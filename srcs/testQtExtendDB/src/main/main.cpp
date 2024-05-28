@@ -302,13 +302,13 @@ int main( int argc, char *argv[ ] ) {
 		return 0;
 	}
 
-	//dbremoveTabTest_db( dbInterface );
-	//qDebug( ) << u8"===========================================";
+	dbremoveTabTest_db( dbInterface );
+	qDebug( ) << u8"===========================================";
 	dbreConverTabTest_db( dbInterface );
-	//qDebug( ) << u8"===========================================";
-	//dbTabTest_db( dbInterface );
-	//qDebug( ) << u8"===========================================";
-	//dbItemTest_db( dbInterface );
+	qDebug( ) << u8"===========================================";
+	dbTabTest_db( dbInterface );
+	qDebug( ) << u8"===========================================";
+	dbItemTest_db( dbInterface );
 
 	qDebug( ) << u8"=================== 进程结束测试 ========================";
 	qDebug( ) << "\n\n\n\n=============\n" << "int main( int argc, char *argv[ ] ) ";
