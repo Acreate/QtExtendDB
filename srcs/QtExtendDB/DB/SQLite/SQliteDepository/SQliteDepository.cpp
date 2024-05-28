@@ -9,129 +9,184 @@
 
 using namespace cylDB;
 
-inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName = "qt_sql_default_connection" ) {
-	std::shared_ptr< QSqlDatabase > result;
-	if( QSqlDatabase::contains( connectionName ) )
-		result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
-			, []( QSqlDatabase *p ) {
-				if( p->isOpen( ) )
-					p->close( );
-				delete p;
-			} );
-	else
-		result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
-			, []( QSqlDatabase *p ) {
-				if( p->isOpen( ) )
-					p->close( );
-				delete p;
-			} );
-	return result;
-}
+namespace sqlTools {
 
-inline IResultInfo_Shared get_QSqlQuery_result( QSqlQuery &q_sql_result ) {
-	bool next = q_sql_result.next( );
-	if( next ) {
-		SQLiteResult *sqLiteResult = new SQLiteResult;
-		do {
-			for( int index = 0; true; ++index ) {
-				auto value = q_sql_result.value( index );
-				if( !value.isValid( ) )
-					break;
-				sqLiteResult->appendRwo( value );
-			}
-			sqLiteResult->newCol( );
-			next = q_sql_result.next( );
-		} while( next );
-		return std::shared_ptr< I_ResultInfo >( sqLiteResult );
+	/// <summary>
+	/// 创建一个 sqlite链接
+	/// </summary>
+	/// <param name="connectionName">链接名称</param>
+	/// <returns>链接</returns>
+	inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName = "qt_sql_default_connection" ) {
+		std::shared_ptr< QSqlDatabase > result;
+		if( QSqlDatabase::contains( connectionName ) )
+			result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
+				, []( QSqlDatabase *p ) {
+					if( p->isOpen( ) )
+						p->close( );
+					delete p;
+				} );
+		else
+			result = std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
+				, []( QSqlDatabase *p ) {
+					if( p->isOpen( ) )
+						p->close( );
+					delete p;
+				} );
+		return result;
 	}
-	return nullptr;
-}
-inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd ) {
-	QSqlQuery query( *database );
-	bool exec = query.exec( cmd );
-	if( !exec )
-		qDebug( ) << cmd << " : " << query.lastError( ).text( ).toStdString( ).c_str( );
-	return exec;
-}
-inline bool is_QSqlQuery_run( const std::shared_ptr< QSqlDatabase > &database, const QString &cmd ) {
-	return is_QSqlQuery_run( database.get( ), cmd );
-}
-inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QString &cmd ) {
-	QSqlQuery query( *database );
-	bool exec = query.exec( cmd );
-	if( exec )
-		return get_QSqlQuery_result( query );
-	qDebug( ) << cmd << " : " << query.lastError( );
-	return nullptr;
-}
-inline qsizetype append_map_create_tab( QString &cmd, const QVariantMap &append_map ) {
-	qsizetype result = 0;
-	auto iterator = append_map.begin( );
-	auto end = append_map.end( );
-	do {
-		cmd.append( " `" );
-		cmd.append( iterator.key( ) );
-		cmd.append( "` " );
-		cmd.append( iterator.value( ).toString( ) );
-		++iterator;
-		++result;
-		if( iterator == end )
-			break;
-		cmd.append( ", " );
-	} while( true );
+	/// <summary>
+	/// 获得 QSqlQuery 的执行返回结果
+	/// </summary>
+	/// <param name="q_sql_result">查询对象</param>
+	/// <returns>失败返回 nullptr</returns>
+	inline IResultInfo_Shared get_QSqlQuery_result( QSqlQuery &q_sql_result ) {
+		bool next = q_sql_result.next( );
+		if( next ) {
+			SQLiteResult *sqLiteResult = new SQLiteResult;
+			do {
+				for( int index = 0; true; ++index ) {
+					auto value = q_sql_result.value( index );
+					if( !value.isValid( ) )
+						break;
+					sqLiteResult->appendRwo( value );
+				}
+				sqLiteResult->newCol( );
+				next = q_sql_result.next( );
+			} while( next );
+			return std::shared_ptr< I_ResultInfo >( sqLiteResult );
+		}
+		return nullptr;
+	}
+	/// <summary>
+	/// 执行一条命令，并且返回是否执行成功
+	/// </summary>
+	/// <param name="database">执行数据库</param>
+	/// <param name="cmd">执行命令行</param>
+	/// <returns>成功返回 true</returns>
+	inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd ) {
+		QSqlQuery query( *database );
+		bool exec = query.exec( cmd );
+		if( !exec )
+			qDebug( ) << cmd << " : " << query.lastError( ).text( ).toStdString( ).c_str( );
+		return exec;
+	}
+	/// <summary>
+	/// 执行一条命令，并且返回是否执行成功
+	/// </summary>
+	/// <param name="database">执行数据库</param>
+	/// <param name="cmd">执行命令行</param>
+	/// <returns>成功返回 true</returns>
+	inline bool is_QSqlQuery_run( const std::shared_ptr< QSqlDatabase > &database, const QString &cmd ) {
+		return is_QSqlQuery_run( database.get( ), cmd );
+	}
+	/// <summary>
+	/// 执行一条命令，并且返回执行结果
+	/// </summary>
+	/// <param name="database">执行数据库</param>
+	/// <param name="cmd">执行命令行</param>
+	/// <returns>失败返回 nullptr</returns>
+	inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QString &cmd ) {
+		QSqlQuery query( *database );
+		bool exec = query.exec( cmd );
+		if( exec )
+			return get_QSqlQuery_result( query );
+		qDebug( ) << cmd << " : " << query.lastError( );
+		return nullptr;
+	}
+	/// <summary>
+	/// 表格命令行拼接
+	/// </summary>
+	/// <param name="cmd">拼接起始</param>
+	/// <param name="append_map">拼接对象</param>
+	/// <returns>拼接个数</returns>
+	inline qsizetype append_map_create_tab( QString &cmd, const QVariantMap &append_map ) {
+		qsizetype result = 0;
+		auto iterator = append_map.begin( );
+		auto end = append_map.end( );
+		do {
+			cmd.append( " `" );
+			cmd.append( iterator.key( ) );
+			cmd.append( "` " );
+			cmd.append( iterator.value( ).toString( ) );
+			++iterator;
+			++result;
+			if( iterator == end )
+				break;
+			cmd.append( ", " );
+		} while( true );
 
-	return result;
-}
-inline qsizetype append_map_update( QString &cmd, const QVariantMap &append_map ) {
-	qsizetype result = 0;
-	auto iterator = append_map.begin( );
-	auto end = append_map.end( );
-	do {
-		cmd.append( " `" );
-		cmd.append( iterator.key( ) );
-		cmd.append( "` =" );
-		cmd.append( iterator.value( ).toString( ) );
-		++iterator;
-		++result;
-		if( iterator == end )
-			break;
-		cmd.append( ", " );
-	} while( true );
+		return result;
+	}
+	/// <summary>
+	/// 更新命令拼接
+	/// </summary>
+	/// <param name="cmd">起始拼接对象</param>
+	/// <param name="append_map">拼接对象映射</param>
+	/// <returns>拼接个数</returns>
+	inline qsizetype append_map_update( QString &cmd, const QVariantMap &append_map ) {
+		qsizetype result = 0;
+		auto iterator = append_map.begin( );
+		auto end = append_map.end( );
+		do {
+			cmd.append( " `" );
+			cmd.append( iterator.key( ) );
+			cmd.append( "` =" );
+			cmd.append( iterator.value( ).toString( ) );
+			++iterator;
+			++result;
+			if( iterator == end )
+				break;
+			cmd.append( ", " );
+		} while( true );
 
-	return result;
-}
-inline qsizetype append_name( QString &cmd, const QStringList &append_list ) {
-	qsizetype result = 0;
-	auto iterator = append_list.begin( );
-	auto end = append_list.end( );
-	do {
-		cmd.append( " `" );
-		cmd.append( *iterator );
-		cmd.append( "`" );
-		++iterator;
-		++result;
-		if( iterator == end )
-			break;
-		cmd.append( " , " );
-	} while( true );
+		return result;
+	}
+	/// <summary>
+	/// 名称拼接
+	/// </summary>
+	/// <param name="cmd">起始拼接对象</param>
+	/// <param name="append_list">拼接列表</param>
+	/// <returns>拼接个数</returns>
+	inline qsizetype append_name( QString &cmd, const QStringList &append_list ) {
+		qsizetype result = 0;
+		auto iterator = append_list.begin( );
+		auto end = append_list.end( );
+		do {
+			cmd.append( " `" );
+			cmd.append( *iterator );
+			cmd.append( "`" );
+			++iterator;
+			++result;
+			if( iterator == end )
+				break;
+			cmd.append( " , " );
+		} while( true );
 
-	return result;
-}
-inline qsizetype append_value( QString &cmd, const QStringList &append_list ) {
-	qsizetype result = 0;
-	auto iterator = append_list.begin( );
-	auto end = append_list.end( );
-	do {
-		cmd.append( *iterator );
-		++iterator;
-		++result;
-		if( iterator == end )
-			break;
-		cmd.append( ", " );
-	} while( true );
+		return result;
+	}
+	/// <summary>
+	/// 值拼接
+	/// </summary>
+	/// <param name="cmd">起始拼接对象</param>
+	/// <param name="append_list">拼接列表</param>
+	/// <returns>拼接个数</returns>
+	inline qsizetype append_value( QString &cmd, const QStringList &append_list ) {
+		qsizetype result = 0;
+		auto iterator = append_list.begin( );
+		auto end = append_list.end( );
+		do {
+			cmd.append( *iterator );
+			++iterator;
+			++result;
+			if( iterator == end )
+				break;
+			cmd.append( ", " );
+		} while( true );
 
-	return result;
+		return result;
+	}
 }
+
 cylDB::SQliteDepository::SQliteDepository( const QString &link_path, const QString &user, const QString &password ) {
 
 	QFileInfo fileInfo( link_path );
@@ -141,7 +196,7 @@ cylDB::SQliteDepository::SQliteDepository( const QString &link_path, const QStri
 
 
 	if( fileInfo.exists( ) && fileInfo.isFile( ) ) {
-		database = make_QSqlDatabase( linkPath );
+		database = sqlTools::make_QSqlDatabase( linkPath );
 		database->setDatabaseName( linkPath );
 	} else
 		database = nullptr;
@@ -150,7 +205,7 @@ cylDB::SQliteDepository::SQliteDepository( const QString &link_path ) {
 	QFileInfo fileInfo( link_path );
 	if( fileInfo.exists( ) && fileInfo.isFile( ) ) {
 		linkPath = fileInfo.absoluteFilePath( );
-		database = make_QSqlDatabase( linkPath );
+		database = sqlTools::make_QSqlDatabase( linkPath );
 		database->setDatabaseName( linkPath );
 	}
 }
@@ -183,9 +238,9 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	cmd.append( "` " );
 	cmd.append( key_type );
 	cmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
-	append_map_create_tab( cmd, tab_info );
+	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( u8" ); " );
-	return is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
 	QSqlDatabase *element = database.get( );
@@ -193,9 +248,9 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 		return false;
 	QString cmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
 	cmd = cmd.arg( tab_name );
-	append_map_create_tab( cmd, tab_info );
+	sqlTools::append_map_create_tab( cmd, tab_info );
 	cmd.append( ");" );
-	return is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd );
 }
 IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
@@ -203,7 +258,7 @@ IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name 
 		return nullptr;
 	QString cmd = R"( PRAGMA table_info( `%1` ); )";
 	cmd = cmd.arg( tab_name );
-	return get_QSqlQuery_run( element, cmd );
+	return sqlTools::get_QSqlQuery_run( element, cmd );
 }
 IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 	QSqlDatabase *element = database.get( );
@@ -211,7 +266,7 @@ IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 		return nullptr;
 	QSqlQuery query( *database );
 	auto cmd = R"(SELECT * FROM sqlite_master ;)";
-	return get_QSqlQuery_run( element, cmd );
+	return sqlTools::get_QSqlQuery_run( element, cmd );
 
 }
 bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const {
@@ -221,11 +276,11 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 			return false;
 		QString cmd = R"(INSERT INTO )";
 		cmd.append( tab_name ).append( "( " );
-		append_name( cmd, item_name );
+		sqlTools::append_name( cmd, item_name );
 		cmd.append( " ) VALUES ( " );
-		append_value( cmd, item_value );
+		sqlTools::append_value( cmd, item_value );
 		cmd.append( " );" );
-		return is_QSqlQuery_run( element, cmd );
+		return sqlTools::is_QSqlQuery_run( element, cmd );
 	}
 
 	return false;
@@ -240,13 +295,13 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 			return false;
 		QString cmd = R"(INSERT INTO `)";
 		cmd.append( tab_name ).append( "` ( `" );
-		append_name( cmd, item_name );
+		sqlTools::append_name( cmd, item_name );
 		cmd.append( " ) VALUES ( " );
-		append_value( cmd, item_value );
+		sqlTools::append_value( cmd, item_value );
 		cmd.append( " ) WHERE" );
 		cmd.append( where );
 		cmd.append( ";" );
-		return is_QSqlQuery_run( element, cmd );
+		return sqlTools::is_QSqlQuery_run( element, cmd );
 	}
 	return false;
 }
@@ -254,11 +309,11 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 	QSqlDatabase *element = database.get( );
 	if( element ) {
 		QString cmd = R"(SELECT  )";
-		append_name( cmd, item_name );
+		sqlTools::append_name( cmd, item_name );
 		cmd.append( R"( FROM )" );
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
-		return get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
@@ -268,13 +323,13 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		if( where.isEmpty( ) )
 			return findItems( tab_name, item_name );
 		QString cmd = R"(SELECT  )";
-		append_name( cmd, item_name );
+		sqlTools::append_name( cmd, item_name );
 		cmd.append( R"( FROM )" );
 		cmd.append( tab_name );
 		cmd.append( " " );
 		cmd.append( where );
 		cmd.append( R"(;)" );
-		return get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
@@ -288,7 +343,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 		cmd.append( " WHERE " );
 		cmd.append( where );
 		cmd.append( " ;" );
-		return get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
@@ -298,7 +353,7 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const 
 		QString cmd = R"(SELECT * FROM )";
 		cmd.append( tab_name );
 		cmd.append( R"(;)" );
-		return get_QSqlQuery_run( element, cmd );
+		return sqlTools::get_QSqlQuery_run( element, cmd );
 	}
 	return nullptr;
 }
@@ -309,14 +364,14 @@ bool SQliteDepository::removeItem( const QString &tab_name, const QString &where
 	if( !element || where.isEmpty( ) )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " WHERE " + where + " ;";
-	return is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd );
 }
 bool SQliteDepository::removeItem( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
 	if( !element )
 		return false;
 	QString cmd = QString( "DELETE FROM " ) + tab_name + " ;";
-	return is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd );
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const {
 	QSqlDatabase *element = database.get( );
@@ -324,9 +379,9 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 		return false;
 	QString cmd = "UPDATE ";
 	cmd.append( tab_name ).append( " SET " );
-	append_map_update( cmd, var_map_s );
+	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " ;" );
-	return is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd );
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const {
 
@@ -337,11 +392,11 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 		return false;
 	QString cmd = "UPDATE ";
 	cmd.append( tab_name ).append( " SET " );
-	append_map_update( cmd, var_map_s );
+	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " WHERE " );
 	cmd.append( where );
 	cmd.append( " ;" );
-	return is_QSqlQuery_run( element, cmd );
+	return sqlTools::is_QSqlQuery_run( element, cmd );
 }
 void cylDB::SQliteDepository::setUserInfo( const QString &user, const QString &password ) {
 
@@ -386,7 +441,7 @@ cylDB::Depository_Shared cylDB::SQliteDepository::createDepository( const QStrin
 	if( fileInfo.exists( ) && fileInfo.isFile( ) )
 		return std::make_shared< SQliteDepository >( db_path );
 	auto dbPath = fileInfo.absoluteFilePath( );
-	auto linkDatabase = make_QSqlDatabase( db_path );;
+	auto linkDatabase = sqlTools::make_QSqlDatabase( db_path );;
 	linkDatabase->setDatabaseName( dbPath );
 	bool openStatus = linkDatabase->isOpen( );
 	if( openStatus )
@@ -402,7 +457,7 @@ cylDB::Depository_Shared cylDB::SQliteDepository::createDepository( const QStrin
 	QFileInfo fileInfo( db_path );
 	if( fileInfo.exists( ) && fileInfo.isFile( ) )
 		return std::make_shared< SQliteDepository >( db_path );
-	auto linkDatabase = make_QSqlDatabase( db_path );;
+	auto linkDatabase = sqlTools::make_QSqlDatabase( db_path );;
 	linkDatabase->setDatabaseName( db_path );
 	if( !linkDatabase->isOpen( ) && !linkDatabase->open( ) && !linkDatabase->open( user, password ) )
 		return nullptr;

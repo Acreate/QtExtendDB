@@ -53,16 +53,83 @@ namespace cylDB {
 		/// <param name="tab_name">表明</param>
 		/// <returns>返回所有列的信息</returns>
 		IResultInfo_Shared getTabInfo( const QString &tab_name ) const override;
+		/// <summary>
+		/// 获取所有表名
+		/// </summary>
+		/// <returns>结果</returns>
 		IResultInfo_Shared getAllTab( ) const override;
+		/// <summary>
+		/// 在表中创建一项
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="item_name">项名</param>
+		/// <param name="item_value">值</param>
+		/// <param name="where">条件</param>
+		/// <returns>成功返回 true</returns>
 		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value, const QString &where ) const override;
-		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const override ;
+		/// <summary>
+		/// 在表中创建一项
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="item_name">项名</param>
+		/// <param name="item_value">值</param>
+		/// <returns>成功返回 true</returns>
+		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const override;
+		/// <summary>
+		/// 从表中查找项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <param name="item_name">项</param>
+		/// <param name="where">条件</param>
+		/// <returns>查找结果</returns>
 		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const override;
-		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name ) const override ;
+		/// <summary>
+		/// 从表中查找项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <param name="item_name">项</param>
+		/// <returns>查找结果</returns>
+		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name ) const override;
+		/// <summary>
+		/// 获取表的所有项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <param name="where">条件</param>
+		/// <returns>查找结果</returns>
 		IResultInfo_Shared findItems( const QString &tab_name, const QString &where ) const override;
-		IResultInfo_Shared findItems( const QString &tab_name ) const override ;
+		/// <summary>
+		/// 获取表的所有项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <returns>查找结果</returns>
+		IResultInfo_Shared findItems( const QString &tab_name ) const override;
+		/// <summary>
+		/// 删除表中的一项
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="where">条件</param>
+		/// <returns>成功返回 true</returns>
 		bool removeItem( const QString &tab_name, const QString &where ) const override;
-		bool removeItem( const QString &tab_name ) const override ;
+		/// <summary>
+		/// 删除表中所有的项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <returns>成功返回 true</returns>
+		bool removeItem( const QString &tab_name ) const override;
+		/// <summary>
+		/// 在表当中更新数据
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="var_map_s">数据列表</param>
+		/// <param name="where">条件</param>
+		/// <returns>成功返回 true</returns>
 		bool updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const override;
+		/// <summary>
+		/// 在表当中更新数据
+		/// </summary>
+		/// <param name="tab_name">表名称</param>
+		/// <param name="var_map_s">数据列表</param>
+		/// <returns>成功返回 true</returns>
 		bool updateItem( const QString &tab_name, const QVariantMap &var_map_s ) const override;
 		/// <summary>
 		/// 设置用户信息
