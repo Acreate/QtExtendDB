@@ -46,7 +46,71 @@ inline IResultInfo_Shared get_QSqlQuery_result( QSqlQuery &q_sql_result ) {
 	}
 	return nullptr;
 }
+inline bool is_QSqlQuery_run( const QSqlDatabase *database, const QString &cmd ) {
+	QSqlQuery query( *database );
+	bool exec = query.exec( cmd );
+	if( !exec )
+		qDebug( ) << cmd << " : " << query.lastError( ).text( ).toStdString( ).c_str( );
+	return exec;
+}
+inline IResultInfo_Shared get_QSqlQuery_run( QSqlDatabase *database, const QString &cmd ) {
+	QSqlQuery query( *database );
+	bool exec = query.exec( cmd );
+	if( exec )
+		return get_QSqlQuery_result( query );
+	qDebug( ) << cmd << " : " << query.lastError( );
+	return nullptr;
+}
+inline qsizetype append_map( QString &cmd, const QVariantMap &append_map ) {
+	qsizetype result = 0;
+	auto iterator = append_map.begin( );
+	auto end = append_map.end( );
+	do {
+		cmd.append( " `" );
+		cmd.append( iterator.key( ) );
+		cmd.append( "` " );
+		cmd.append( iterator.value( ).toString( ) );
+		++iterator;
+		++result;
+		if( iterator == end )
+			break;
+		cmd.append( ", " );
+	} while( true );
 
+	return result;
+}
+inline qsizetype append_name( QString &cmd, const QStringList &append_list ) {
+	qsizetype result = 0;
+	auto iterator = append_list.begin( );
+	auto end = append_list.end( );
+	do {
+		cmd.append( " `" );
+		cmd.append( *iterator );
+		cmd.append( "`" );
+		++iterator;
+		++result;
+		if( iterator == end )
+			break;
+		cmd.append( " , " );
+	} while( true );
+
+	return result;
+}
+inline qsizetype append_value( QString &cmd, const QStringList &append_list ) {
+	qsizetype result = 0;
+	auto iterator = append_list.begin( );
+	auto end = append_list.end( );
+	do {
+		cmd.append( *iterator );
+		++iterator;
+		++result;
+		if( iterator == end )
+			break;
+		cmd.append( ", " );
+	} while( true );
+
+	return result;
+}
 cylDB::SQliteDepository::SQliteDepository( const QString &link_path, const QString &user, const QString &password ) {
 
 	QFileInfo fileInfo( link_path );
@@ -89,71 +153,40 @@ bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariant
 	if( key.isEmpty( ) )
 		return createTab( tab_name, tab_info );
 
-	QString createTabCmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
-	createTabCmd = createTabCmd.arg( tab_name );
-	auto iterator = tab_info.begin( );
-	auto end = tab_info.end( );
+	QString cmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
+	cmd = cmd.arg( tab_name );
 
-	createTabCmd.append( '`' );
-	createTabCmd.append( key );
-	createTabCmd.append( '`' );
-	createTabCmd.append( key_type );
-	createTabCmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
-	do {
-		createTabCmd.append( " `" );
-		createTabCmd.append( iterator.key( ) );
-		createTabCmd.append( "` " );
-		createTabCmd.append( iterator.value( ).toString( ) );
-		++iterator;
-		if( iterator == end ) {
-			createTabCmd.append( u8" ); " );
-			break;
-		}
-		createTabCmd.append( ", " );
-	} while( true );
-	QSqlQuery query( *database );
-	return query.exec( createTabCmd );
+	cmd.append( '`' );
+	cmd.append( key );
+	cmd.append( "` " );
+	cmd.append( key_type );
+	cmd.append( "  PRIMARY KEY AUTOINCREMENT, " );
+	append_map( cmd, tab_info );
+	cmd.append( u8" ); " );
+	return is_QSqlQuery_run( database.get( ), cmd );
 }
 bool cylDB::SQliteDepository::createTab( const QString &tab_name, const QVariantMap &tab_info ) const {
 	if( !database || tab_info.isEmpty( ) || tab_name.isEmpty( ) )
 		return false;
-
-	QString createTabCmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
-	createTabCmd = createTabCmd.arg( tab_name );
-	auto iterator = tab_info.begin( );
-	auto end = tab_info.end( );
-	do {
-
-		createTabCmd.append( " `" );
-		createTabCmd.append( iterator.key( ) );
-		createTabCmd.append( "` " );
-		createTabCmd.append( iterator.value( ).toString( ) );
-
-		++iterator;
-		if( iterator == end ) {
-			createTabCmd.append( u8" ); " );
-			break;
-		}
-		createTabCmd.append( ", " );
-	} while( true );
-	QSqlQuery query( *database );
-	return query.exec( createTabCmd );
+	QString cmd( R"(CREATE TABLE IF NOT EXISTS `%1` ( )" );
+	cmd = cmd.arg( tab_name );
+	append_map( cmd, tab_info );
+	cmd.append( ");" );
+	return is_QSqlQuery_run( database.get( ), cmd );
 }
 IResultInfo_Shared cylDB::SQliteDepository::getTabInfo( const QString &tab_name ) const {
 	if( database ) {
 		QString cmd = R"( PRAGMA table_info( `%1` ); )";
 		cmd = cmd.arg( tab_name );
-		QSqlQuery query( *database );
-		if( query.exec( cmd ) )
-			return get_QSqlQuery_result( query );
+		return get_QSqlQuery_run( database.get( ), cmd );
 	}
 	return nullptr;
 }
 IResultInfo_Shared SQliteDepository::getAllTab( ) const {
 	if( database ) {
 		QSqlQuery query( *database );
-		if( query.exec( R"(SELECT * FROM sqlite_master ;)" ) )
-			return get_QSqlQuery_result( query );
+		auto cmd = R"(SELECT * FROM sqlite_master ;)";
+		return get_QSqlQuery_run( database.get( ), cmd );
 	}
 	return nullptr;
 }
@@ -161,36 +194,13 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 	if( database ) {
 		if( item_name.size( ) == 0 || item_value.size( ) == 0 )
 			return false;
-
 		QString cmd = R"(INSERT INTO )";
 		cmd.append( tab_name ).append( "( " );
-		auto iterator = item_name.begin( );
-		auto end = item_name.end( );
-		do {
-			cmd.append( *iterator );
-			++iterator;
-			if( iterator == end )
-				break;
-			cmd.append( ", " );
-		} while( true );
+		append_name( cmd, item_name );
 		cmd.append( " ) VALUES ( " );
-		iterator = item_value.begin( );
-		end = item_value.end( );
-		do {
-			cmd.append( *iterator );
-			++iterator;
-			if( iterator == end )
-				break;
-			cmd.append( " , " );
-		} while( true );
-
-		cmd.append( " )" );
-		QSqlQuery query( *database );
-		qDebug( ) << cmd;
-		bool exec = query.exec( cmd );
-		if( !exec )
-			qDebug( ) << database->lastError( );
-		return exec;
+		append_value( cmd, item_value );
+		cmd.append( " );" );
+		return is_QSqlQuery_run( database.get( ), cmd );
 	}
 
 	return false;
@@ -204,36 +214,63 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 
 		QString cmd = R"(INSERT INTO `)";
 		cmd.append( tab_name ).append( "` ( `" );
-		auto iterator = tab_name.begin( );
-		auto end = tab_name.end( );
-		do {
-			cmd.append( "`" );
-			cmd.append( *iterator );
-			cmd.append( "` " );
-			++iterator;
-			if( iterator == end )
-				break;
-			cmd.append( ", `" );
-		} while( true );
-		cmd.append( ") VALUES (" );
-		auto item_valueiterator = item_value.begin( );
-		auto item_valueend = item_value.end( );
-		do {
-			cmd.append( "`" );
-			cmd.append( *item_valueiterator );
-			cmd.append( "` " );
-			++item_valueiterator;
-			if( item_valueiterator == item_valueend )
-				break;
-			cmd.append( ", `" );
-		} while( true );
+		append_name( cmd, item_name );
+		cmd.append( " ) VALUES ( " );
+		append_value( cmd, item_value );
 		cmd.append( " ) WHERE" );
 		cmd.append( where );
 		cmd.append( ";" );
-		QSqlQuery query( *database );
-		return query.exec( cmd );
+		return is_QSqlQuery_run( database.get( ), cmd );
 	}
 	return false;
+}
+IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const QStringList &item_name ) const {
+	if( database ) {
+		QString cmd = R"(SELECT  )";
+		append_name( cmd, item_name );
+		cmd.append( R"( FROM )" );
+		cmd.append( tab_name );
+		cmd.append( R"(;)" );
+		return get_QSqlQuery_run( database.get( ), cmd );
+	}
+	return nullptr;
+}
+IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const {
+	if( database ) {
+		if( where.isEmpty( ) )
+			return findItems( tab_name, item_name );
+		QString cmd = R"(SELECT  )";
+		append_name( cmd, item_name );
+		cmd.append( R"( FROM )" );
+		cmd.append( tab_name );
+		cmd.append( " " );
+		cmd.append( where );
+		cmd.append( R"(;)" );
+		return get_QSqlQuery_run( database.get( ), cmd );
+	}
+	return nullptr;
+}
+IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const QString &where ) const {
+	if( database ) {
+		if( where.isEmpty( ) )
+			return findItems( tab_name );
+		QString cmd = R"(SELECT * FROM )";
+		cmd.append( tab_name );
+		cmd.append( " WHERE " );
+		cmd.append( where );
+		cmd.append( " ;" );
+		return get_QSqlQuery_run( database.get( ), cmd );
+	}
+	return nullptr;
+}
+IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const {
+	if( database ) {
+		QString cmd = R"(SELECT * FROM )";
+		cmd.append( tab_name );
+		cmd.append( R"(;)" );
+		return get_QSqlQuery_run( database.get( ), cmd );
+	}
+	return nullptr;
 }
 
 bool cylDB::SQliteDepository::removeItem( const QString &tab_name, const QString &item_name ) const {

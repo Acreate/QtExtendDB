@@ -29,7 +29,7 @@ namespace cylDB {
 		/// <param name="key">关键 key</param>
 		/// <param name="key_type">key 的类型</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool createTab( const QString &tab_name, const QVariantMap &tab_info, const QString &key , const QString &key_type) const = 0;
+		virtual bool createTab( const QString &tab_name, const QVariantMap &tab_info, const QString &key, const QString &key_type ) const = 0;
 		/// <summary>
 		/// 创建表
 		/// </summary>
@@ -47,7 +47,7 @@ namespace cylDB {
 		/// 获取所有表名
 		/// </summary>
 		/// <returns>结果</returns>
-		virtual IResultInfo_Shared getAllTab() const = 0;
+		virtual IResultInfo_Shared getAllTab( ) const = 0;
 		/// <summary>
 		/// 在表中创建一项
 		/// </summary>
@@ -55,7 +55,7 @@ namespace cylDB {
 		/// <param name="item_name">项名</param>
 		/// <param name="item_value">值</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool addItem( const QString &tab_name, const QStringList& item_name, const QStringList& item_value) const = 0;
+		virtual bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const = 0;
 		/// <summary>
 		/// 在表中创建一项
 		/// </summary>
@@ -64,7 +64,35 @@ namespace cylDB {
 		/// <param name="item_value">值</param>
 		/// <param name="where">条件</param>
 		/// <returns>成功返回 true</returns>
-		virtual bool addItem( const QString &tab_name, const QStringList& item_name, const QStringList& item_value, const QString& where) const = 0;
+		virtual bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value, const QString &where ) const = 0;
+		/// <summary>
+		/// 从表中查找项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <param name="item_name">项</param>
+		/// <returns>查找结果</returns>
+		virtual IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name ) const =0;
+		/// <summary>
+		/// 从表中查找项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <param name="item_name">项</param>
+		/// <param name="where">条件</param>
+		/// <returns>查找结果</returns>
+		virtual IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const =0;
+		/// <summary>
+		/// 获取表的所有项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <param name="where">条件</param>
+		/// <returns>查找结果</returns>
+		virtual IResultInfo_Shared findItems( const QString &tab_name, const QString &where ) const =0;
+		/// <summary>
+		/// 获取表的所有项
+		/// </summary>
+		/// <param name="tab_name">表名</param>
+		/// <returns>查找结果</returns>
+		virtual IResultInfo_Shared findItems( const QString &tab_name ) const =0;
 		/// <summary>
 		/// 删除表中的一项
 		/// </summary>

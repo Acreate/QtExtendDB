@@ -56,6 +56,10 @@ namespace cylDB {
 		IResultInfo_Shared getAllTab( ) const override;
 		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value ) const override;
 		bool addItem( const QString &tab_name, const QStringList &item_name, const QStringList &item_value, const QString &where ) const override;
+		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name ) const override;
+		IResultInfo_Shared findItems( const QString &tab_name, const QStringList &item_name, const QString &where ) const override;
+		IResultInfo_Shared findItems( const QString &tab_name, const QString &where ) const override;
+		IResultInfo_Shared findItems( const QString &tab_name ) const override;
 		/// <summary>
 		/// 删除表中的一项
 		/// </summary>
