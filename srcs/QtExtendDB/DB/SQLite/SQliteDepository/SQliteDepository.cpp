@@ -360,8 +360,8 @@ bool SQliteDepository::addItem( const QString &tab_name, const QStringList &item
 		QSqlDatabase *element = database.get( );
 		if( !element || item_name.size( ) == 0 || item_value.size( ) == 0 )
 			return false;
-		QString cmd = R"(INSERT INTO )";
-		cmd.append( tab_name ).append( "( " );
+		QString cmd = R"(INSERT INTO `)";
+		cmd.append( tab_name ).append( "`( " );
 		sqlTools::append_name( cmd, item_name );
 		cmd.append( " ) VALUES ( " );
 		sqlTools::append_value( cmd, item_value );
@@ -398,9 +398,9 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 	if( element ) {
 		QString cmd = R"(SELECT  )";
 		sqlTools::append_name( cmd, item_name );
-		cmd.append( R"( FROM )" );
+		cmd.append( R"( FROM `)" );
 		cmd.append( tab_name );
-		cmd.append( R"(;)" );
+		cmd.append( R"(`;)" );
 		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
@@ -413,9 +413,9 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 			return findItems( tab_name, item_name );
 		QString cmd = R"(SELECT  )";
 		sqlTools::append_name( cmd, item_name );
-		cmd.append( R"( FROM )" );
+		cmd.append( R"( FROM `)" );
 		cmd.append( tab_name );
-		cmd.append( " " );
+		cmd.append( "` " );
 		cmd.append( where );
 		cmd.append( R"(;)" );
 		QMutexLocker< QMutex > locker( dbMutex.get( ) );
@@ -428,9 +428,9 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 	if( element ) {
 		if( where.isEmpty( ) )
 			return findItems( tab_name );
-		QString cmd = R"(SELECT * FROM )";
+		QString cmd = R"(SELECT * FROM `)";
 		cmd.append( tab_name );
-		cmd.append( " WHERE " );
+		cmd.append( "` WHERE " );
 		cmd.append( where );
 		cmd.append( " ;" );
 		QMutexLocker< QMutex > locker( dbMutex.get( ) );
@@ -441,9 +441,9 @@ IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name, const Q
 IResultInfo_Shared SQliteDepository::findItems( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
 	if( element ) {
-		QString cmd = R"(SELECT * FROM )";
+		QString cmd = R"(SELECT * FROM `)";
 		cmd.append( tab_name );
-		cmd.append( R"(;)" );
+		cmd.append( R"(`;)" );
 		QMutexLocker< QMutex > locker( dbMutex.get( ) );
 		return sqlTools::get_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 	}
@@ -455,7 +455,7 @@ bool SQliteDepository::removeItem( const QString &tab_name, const QString &where
 	QSqlDatabase *element = database.get( );
 	if( !element || where.isEmpty( ) )
 		return false;
-	QString cmd = QString( "DELETE FROM " ) + tab_name + " WHERE " + where + " ;";
+	QString cmd = QString( "DELETE FROM `" ) + tab_name + "` WHERE " + where + " ;";
 	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
@@ -463,7 +463,7 @@ bool SQliteDepository::removeItem( const QString &tab_name ) const {
 	QSqlDatabase *element = database.get( );
 	if( !element )
 		return false;
-	QString cmd = QString( "DELETE FROM " ) + tab_name + " ;";
+	QString cmd = QString( "DELETE FROM `" ) + tab_name + "` ;";
 	QMutexLocker< QMutex > locker( dbMutex.get( ) );
 	return sqlTools::is_QSqlQuery_run( element, cmd, __FILE__, __LINE__ );
 }
@@ -471,8 +471,8 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	QSqlDatabase *element = database.get( );
 	if( !element || var_map_s.isEmpty( ) )
 		return false;
-	QString cmd = "UPDATE ";
-	cmd.append( tab_name ).append( " SET " );
+	QString cmd = "UPDATE `";
+	cmd.append( tab_name ).append( "` SET " );
 	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " ;" );
 	QMutexLocker< QMutex > locker( dbMutex.get( ) );
@@ -564,8 +564,8 @@ bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &v
 	QSqlDatabase *element = database.get( );
 	if( !element || var_map_s.isEmpty( ) )
 		return false;
-	QString cmd = "UPDATE ";
-	cmd.append( tab_name ).append( " SET " );
+	QString cmd = "UPDATE `";
+	cmd.append( tab_name ).append( "` SET " );
 	sqlTools::append_map_update( cmd, var_map_s );
 	cmd.append( " WHERE " );
 	cmd.append( where );
