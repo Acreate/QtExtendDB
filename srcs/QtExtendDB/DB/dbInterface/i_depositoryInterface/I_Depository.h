@@ -142,16 +142,34 @@ namespace cylDB {
 		/// <summary>
 		/// 执行一个sql命令
 		/// </summary>
-		/// <param name="cmd">命令</param>
+		/// <param name="query">命令</param>
 		/// <param name="sql_exec_result">返回</param>
 		/// <returns>成功表示为 true</returns>
-		virtual bool exec( const QString &cmd, IResultInfo_Shared &sql_exec_result ) const = 0;
+		virtual bool exec( const QString &query, IResultInfo_Shared &sql_exec_result ) const = 0;
+		/// <summary>
+		/// 执行一个 sql 命令
+		/// </summary>
+		/// <param name="query">执行对象</param>
+		/// <param name="sql_exec_result">执行返回</param>
+		/// <returns>成功返回 true</returns>
+		virtual bool exec( QSqlQuery *query, IResultInfo_Shared &sql_exec_result ) const = 0;
+		/// <summary>
+		/// 执行一个 sql 命令
+		/// </summary>
+		/// <param name="cmd">执行对象</param>
+		/// <returns>成功返回 true</returns>
+		virtual bool exec( QSqlQuery *cmd ) const = 0;
 		/// <summary>
 		/// 生成一个执行器
 		/// </summary>
 		/// <returns>执行器指针对象，失败返回 nullptr</returns>
 		virtual std::shared_ptr< QSqlQuery > generateSqlQuery( ) const = 0;
 		/// <summary>
+		/// 生成一个执行器
+		/// </summary>
+		/// <param name="query">命令</param>
+		/// <returns>执行器指针对象，失败返回 nullptr</returns>
+		virtual std::shared_ptr< QSqlQuery > generateSqlQuery( const QString &query ) const = 0;
 		/// 提交事务
 		/// </summary>
 		/// <returns>失败返回 false</returns>

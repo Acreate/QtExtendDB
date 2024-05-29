@@ -51,24 +51,22 @@ namespace sqlTools {
 	/// <param name="connectionName">链接名称</param>
 	/// <returns>链接</returns>
 	inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName ) {
+		/// 释放处理调用
+		auto releaseFunction = []( QSqlDatabase *p ) {
+			QString connectionName = p->connectionName( );
+			if( p->isOpen( ) ) {
+				p->commit( );
+				p->close( );
+			}
+			delete p;
+			QSqlDatabase::removeDatabase( connectionName );
+		};
 		if( QSqlDatabase::contains( connectionName ) )
 			return std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
-				, []( QSqlDatabase *p ) {
-					QString connectionName = p->connectionName( );
-					if( p->isOpen( ) )
-						p->close( );
-					QSqlDatabase::removeDatabase( connectionName );
-					delete p;
-				} );
+				, releaseFunction );
 		else
 			return std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
-				, []( QSqlDatabase *p ) {
-					QString connectionName = p->connectionName( );
-					if( p->isOpen( ) )
-						p->close( );
-					QSqlDatabase::removeDatabase( connectionName );
-					delete p;
-				} );
+				, releaseFunction );
 	}
 	/// <summary>
 	/// 获得 QSqlQuery 的执行返回结果
@@ -104,6 +102,17 @@ namespace sqlTools {
 	inline void out_SQLResult_error( QSqlQuery &sql_quert, bool exe_result, const QString &cmd, const char *file, const size_t line ) {
 		if( !exe_result )
 			qDebug( ) << "\n=====\tQSqlQuery 执行错误\n\"" << cmd.toStdString( ).c_str( ) << "\"\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ) << "\n=====\n";
+	}
+	/// <summary>
+	/// 输出错误信息
+	/// </summary>
+	/// <param name="sql_quert">执行对象</param>
+	/// <param name="exe_result">执行返回</param>
+	/// <param name="file">调用文件</param>
+	/// <param name="line">调用行数</param>
+	inline void out_SQLResult_error( QSqlQuery &sql_quert, bool exe_result, const char *file, const size_t line ) {
+		if( !exe_result )
+			qDebug( ) << "\n=====\tQSqlQuery 执行错误\n----\"" << sql_quert.lastQuery( ).toStdString( ).c_str( ) << "\"\n----\n----" << sql_quert.lastQuery( ).toStdString( ).c_str( ) << "\n----\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ) << "\n=====\n";
 	}
 	/// <summary>
 	/// 执行一条命令，并且返回是否执行成功
@@ -623,10 +632,45 @@ bool SQliteDepository::exec( const QString &cmd, IResultInfo_Shared &sql_exec_re
 	if( element == nullptr )
 		return false;
 	QSqlQuery query( *database );
-	bool exec = query.exec( cmd );
-	sqlTools::out_SQLResult_error( query, exec, cmd, __FILE__, __LINE__ );
-	sql_exec_result = sqlTools::get_QSqlQuery_result( query );
-	return exec;
+
+	if( isTransaction ) {
+		bool exec = query.exec( cmd );
+		sqlTools::out_SQLResult_error( query, exec, cmd, __FILE__, __LINE__ );
+		sql_exec_result = sqlTools::get_QSqlQuery_result( query );
+		return exec;
+	} else {
+		QMutexLocker< QMutex > loco( dbMutex.get( ) );
+		bool exec = query.exec( cmd );
+		sqlTools::out_SQLResult_error( query, exec, cmd, __FILE__, __LINE__ );
+		sql_exec_result = sqlTools::get_QSqlQuery_result( query );
+		return exec;
+	}
+}
+bool SQliteDepository::exec( QSqlQuery *query, IResultInfo_Shared &sql_exec_result ) const {
+	if( isTransaction ) {
+		bool exec = query->exec( );
+		sqlTools::out_SQLResult_error( *query, exec, query->lastQuery( ), __FILE__, __LINE__ );
+		sql_exec_result = sqlTools::get_QSqlQuery_result( *query );
+		return exec;
+	} else {
+		QMutexLocker< QMutex > loco( dbMutex.get( ) );
+		bool exec = query->exec( );
+		sqlTools::out_SQLResult_error( *query, exec, query->lastQuery( ), __FILE__, __LINE__ );
+		sql_exec_result = sqlTools::get_QSqlQuery_result( *query );
+		return exec;
+	}
+}
+bool SQliteDepository::exec( QSqlQuery *query ) const {
+	if( isTransaction ) {
+		bool exec = query->exec( );
+		sqlTools::out_SQLResult_error( *query, exec, __FILE__, __LINE__ );
+		return exec;
+	} else {
+		QMutexLocker< QMutex > loco( dbMutex.get( ) );
+		bool exec = query->exec( );
+		sqlTools::out_SQLResult_error( *query, exec, __FILE__, __LINE__ );
+		return exec;
+	}
 }
 bool SQliteDepository::updateItem( const QString &tab_name, const QVariantMap &var_map_s, const QString &where ) const {
 
@@ -676,7 +720,8 @@ bool cylDB::SQliteDepository::open( const QString &user, const QString &password
 bool cylDB::SQliteDepository::close( ) const {
 	if( database ) {
 		database->close( );
-		return true;
+		database->commit( );
+		return !database->isOpen( );
 	}
 	return false;
 }

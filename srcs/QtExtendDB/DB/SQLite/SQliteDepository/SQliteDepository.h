@@ -153,16 +153,36 @@ namespace cylDB {
 		/// <summary>
 		/// 执行一个sql命令
 		/// </summary>
-		/// <param name="cmd">命令</param>
+		/// <param name="query">命令</param>
 		/// <param name="sql_exec_result">返回</param>
 		/// <returns>成功表示为 true</returns>
-		bool exec( const QString &cmd, IResultInfo_Shared &sql_exec_result ) const override;
+		bool exec( const QString &query, IResultInfo_Shared &sql_exec_result ) const override;
+		/// <summary>
+		/// 执行一个 sql 命令
+		/// </summary>
+		/// <param name="query">执行对象</param>
+		/// <param name="sql_exec_result">执行返回</param>
+		/// <returns>成功返回 true</returns>
+		bool exec( QSqlQuery *query, IResultInfo_Shared &sql_exec_result ) const override;
+		/// <summary>
+		/// 执行一个 sql 命令
+		/// </summary>
+		/// <param name="cmd">执行对象</param>
+		/// <returns>成功返回 true</returns>
+		bool exec( QSqlQuery *cmd ) const override;
 		/// <summary>
 		/// 生成一个执行器
 		/// </summary>
 		/// <returns>执行器指针对象，失败返回 nullptr</returns>
 		std::shared_ptr< QSqlQuery > generateSqlQuery( ) const override {
 			return std::make_shared< QSqlQuery >( *database );
+		}
+		/// <summary>
+		/// 生成一个执行器
+		/// </summary>
+		/// <returns>执行器指针对象，失败返回 nullptr</returns>
+		std::shared_ptr< QSqlQuery > generateSqlQuery( const QString &query ) const override {
+			return std::make_shared< QSqlQuery >( query, *database );
 		}
 		/// <summary>
 		/// 提交事务
