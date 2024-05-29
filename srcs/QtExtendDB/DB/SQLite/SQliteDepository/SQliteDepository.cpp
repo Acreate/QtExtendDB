@@ -51,6 +51,9 @@ namespace sqlTools {
 	/// <param name="connectionName">链接名称</param>
 	/// <returns>链接</returns>
 	inline std::shared_ptr< QSqlDatabase > make_QSqlDatabase( const QString &connectionName ) {
+		static QMap< QString, size_t > userCount;
+		static QMutex qtMutex;
+		QMutexLocker lock( &qtMutex );
 		/// 释放处理调用
 		auto releaseFunction = []( QSqlDatabase *p ) {
 			QString connectionName = p->connectionName( );
@@ -59,14 +62,27 @@ namespace sqlTools {
 				p->close( );
 			}
 			delete p;
-			QSqlDatabase::removeDatabase( connectionName );
+			auto iterator = userCount.begin( );
+			auto end = userCount.end( );
+			for( ; iterator != end; ++iterator )
+				if( iterator.key( ) == connectionName ) {
+					size_t &value = iterator.value( );
+					--value;
+					if( value == 0 )
+						QSqlDatabase::removeDatabase( connectionName );
+					break;
+				}
 		};
-		if( QSqlDatabase::contains( connectionName ) )
+		if( QSqlDatabase::contains( connectionName ) ) {
+			++userCount[ connectionName ];
 			return std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::database( connectionName ) )
 				, releaseFunction );
-		else
+		} else {
+			userCount.insert( connectionName, 1 );
 			return std::shared_ptr< QSqlDatabase >( new QSqlDatabase( QSqlDatabase::addDatabase( "QSQLITE", connectionName ) )
 				, releaseFunction );
+		}
+
 	}
 	/// <summary>
 	/// 获得 QSqlQuery 的执行返回结果
