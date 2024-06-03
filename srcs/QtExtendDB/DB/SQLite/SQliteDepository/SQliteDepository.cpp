@@ -9,7 +9,7 @@
 #include <QMap>
 
 #include "../sqliteTabInfo/SQLiteTabInfo.h"
-
+#include <iostream>
 using namespace cylDB;
 
 namespace sqlTools {
@@ -23,12 +23,12 @@ namespace sqlTools {
 			auto sharedPtrs = result_info_shared->getCurrentRows( );
 			size_t count = 1;
 			if( sharedPtrs->size( ) != 0 ) {
-				qDebug( ) << "∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵";
+				std::cout << "∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵∵" << std::endl;
 				QStringList buffMsg;
 				do {
 					for( auto &row : *sharedPtrs )
 						buffMsg.append( row->toString( ) );
-					qDebug( ) << count << '\t' << buffMsg.join( ", " ).toStdString( ).c_str( );
+					std::cout << count << '\t' << buffMsg.join( ", " ).toStdString( ).c_str( ) << std::endl;
 					bool cond = !result_info_shared->nextCol( );
 					if( cond )
 						break;
@@ -38,11 +38,11 @@ namespace sqlTools {
 					buffMsg.clear( );
 					++count;
 				} while( true );
-				qDebug( ) << "∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴";
+				std::cout << "∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴∴" << std::endl;
 				return;
 			}
 		}
-		qDebug( ) << "\t" << "result_info_shared 值为 nullptr";
+		std::cout << '\t' << "result_info_shared 值为 nullptr" << std::endl;
 
 	}
 	static QMap< QString, size_t > connectionNameCount; // 数据库名称链接计数器
@@ -117,7 +117,7 @@ namespace sqlTools {
 	/// <param name="line">调用行数</param>
 	inline void out_SQLResult_error( QSqlQuery &sql_quert, bool exe_result, const QString &cmd, const char *file, const size_t line ) {
 		if( !exe_result )
-			qDebug( ) << "\n=====\tQSqlQuery 执行错误\n\"" << cmd.toStdString( ).c_str( ) << "\"\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ) << "\n=====\n";
+			std::cout << "\n=====\tQSqlQuery 执行错误\n\"" << cmd.toStdString( ) << "\"\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ).text( ).toStdString( ) << "\n=====\n" << std::endl;
 	}
 	/// <summary>
 	/// 输出错误信息
@@ -128,7 +128,7 @@ namespace sqlTools {
 	/// <param name="line">调用行数</param>
 	inline void out_SQLResult_error( QSqlQuery &sql_quert, bool exe_result, const char *file, const size_t line ) {
 		if( !exe_result )
-			qDebug( ) << "\n=====\tQSqlQuery 执行错误\n----\"" << sql_quert.lastQuery( ).toStdString( ).c_str( ) << "\"\n----\n----" << sql_quert.lastQuery( ).toStdString( ).c_str( ) << "\n----\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ) << "\n=====\n";
+			std::cout << "\n=====\tQSqlQuery 执行错误\n----\"" << sql_quert.lastQuery( ).toStdString( ).c_str( ) << "\"\n----\n----" << sql_quert.lastQuery( ).toStdString( ).c_str( ) << "\n----\n\t( 行:" << line << ") \n\t*" << file << "\n\t:=>" << sql_quert.lastError( ).text( ).toStdString( ) << "\n=====\n" << std::endl;
 	}
 	/// <summary>
 	/// 执行一条命令，并且返回是否执行成功
