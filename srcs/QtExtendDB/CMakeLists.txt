@@ -61,7 +61,7 @@ if( "EXECUTABLE" STREQUAL ${project_type_property} )
 else()
 	set( project_type_property_is_exe false )
 endif()
-
+message(cmake_definitions_org)
 configure_file( "${cmake_definitions_org}" "${cmake_definitions_out}" )
 SET( exportFileName ${CMAKE_CURRENT_SOURCE_DIR}/${cmake_auto_sub_dir_name}/export/${exportFileStartName}${exportFileName}_export.h )
 GENERATE_EXPORT_HEADER( ${PROJECT_NAME}
