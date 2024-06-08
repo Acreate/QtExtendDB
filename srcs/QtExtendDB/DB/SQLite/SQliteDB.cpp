@@ -1,7 +1,7 @@
 ﻿#include "SQliteDB.h"
 #include <QVector>
 #include <QDir>
-#include "SQliteDepository/SQliteDepository.h"
+#include "./SQliteDepository/SQliteDepository.h"
 using namespace cylDB;
 SQliteDB::SQliteDB( const QString &link ) {
 	linkPath = QFileInfo( link ).absoluteFilePath( );
